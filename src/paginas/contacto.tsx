@@ -26,7 +26,7 @@ const Contacto: React.FC = () => {
 
      // Validación del nombre
     if (!apellidos.trim()) {
-      nuevosErrores.nombre = "los apellidos no puede estar vacío.";
+      nuevosErrores.apellidos = "los apellidos no puede estar vacío.";
     }
 
     // Validación del email con expresión regular
@@ -77,8 +77,8 @@ const Contacto: React.FC = () => {
     !!errores.mensaje;
 
   return (
-    <div className="main-content">
-      <h1 className="text-white fw-bold display-5 mb-3">Contacto 📬</h1>
+    <div className="contact-form-container">
+      <h1 className="text-white fw-bold display-5 mb-3">Contacto 📨</h1>
       <p className="lead text-white mb-4">
         Completa el formulario y nos pondremos en contacto contigo.
       </p>

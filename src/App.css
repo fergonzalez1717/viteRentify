@@ -32,6 +32,23 @@
   padding: 2em;
 }
 
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* para que tome toda la altura disponible */
+}
+
+.card-body {
+  flex: 1; /* para que ocupe el espacio disponible */
+  display: flex;
+  flex-direction: column;
+}
+
+.card-body > .btn {
+  margin-top: auto; /* empuja el botón hacia el fondo */
+}
+
+
 .read-the-docs {
   color: #888;
 }
@@ -51,10 +68,75 @@
   display: block;
 }
 
+/*formulario estilos*/ 
 .main-content {
   margin: 0;
   padding: 0;
 }
+form {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+.contact-form-container {
+  background-color: #103820; /* verde oscuro */
+  color: #d4e9d4; /* verde claro */
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 600px;
+  margin: 2rem auto;
+  box-shadow: 0 0 15px rgba(16, 56, 32, 0.8);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin-top: 100px;
+}
+
+.contact-form-container label {
+  color: #a6c9a6; /* verde suave */
+  font-weight: 600;
+}
+
+.contact-form-container input.form-control,
+.contact-form-container textarea.form-control {
+  background-color: #184c2b;
+  color: #d4e9d4;
+  border: 1px solid #2e6b3a;
+  padding: 10px;
+  border-radius: 6px;
+  transition: border-color 0.3s ease;
+}
+
+.contact-form-container input.form-control:focus,
+.contact-form-container textarea.form-control:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 5px #4caf50;
+}
+
+.contact-form-container .text-danger {
+  color: #ff6b6b; /* rojo suave */
+  font-weight: 600;
+}
+
+.contact-form-container button.btn {
+  background-color: #2e6b3a;
+  color: #d4e9d4;
+  border: none;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.contact-form-container button.btn:hover:not(:disabled) {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+.contact-form-container button.btn:disabled {
+  background-color: #4a7c4a;
+  cursor: not-allowed;
+}
+
 
 /*estilo de nosotros*/
 /* Contenedor principal */
@@ -116,6 +198,11 @@
   .nosotros-container p {
     font-size: 0.95rem;
   }
+}
+
+.nosotros-container {
+  margin-top: 100px;  /* separa arriba */
+  margin-bottom: 60px; /* separa abajo */
 }
 
 
