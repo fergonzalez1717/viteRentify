@@ -48,10 +48,84 @@ const Home: React.FC = () => { // Declara un componente funcional llamado Home, 
       <h1 className="text-white fw-bold display-5">
         Bienvenidos a Rentify
       </h1>
-      <p className="lead text-white">
+      <p className="lead">
         Arrendar es sencillo, directo y sin comisiones.
       </p>
+
+       {/* inicio buscador destacado */}
+      <section
+        className="hero-search-section "
+      >
+        <p className="lead mb-3 text-center">
+          Completa el buscador para encontrar tu inmueble ideal sin intermediarios.
+        </p>
+        <form className="row g-3 align-items-center justify-content-center">
+          <div className="col-12 col-md-5">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Ubicación"
+              aria-label="Ubicación"
+            />
+          </div>
+          <div className="col-6 col-md-3">
+            <select className="form-select" aria-label="Tipo de inmueble">
+              <option value="">Tipo de inmueble</option>
+              <option value="departamento">Departamento</option>
+              <option value="casa">Casa</option>
+            </select>
+          </div>
+          <div className="col-6 col-md-3">
+            <select className="form-select" aria-label="Rango de precio">
+              <option value="">Rango de precio</option>
+              <option value="0-500">$0 - $500,000</option>
+              <option value="501-1000">$501,000 - $100,000,000</option>
+              <option value="1001-2000">$1,000,001 - $1,600,000</option>
+            </select>
+          </div>
+          <div className="col-12 mt-3 d-grid">
+          <button type="submit" className="btn btn-light">
+           Buscar
+           </button>
+          </div>
+        </form>
+      </section>
+      {/* termino buscador destacado*/}
+
+
+
+
+      {/* Sección beneficios */}
+     <section className="container my-5 text-center">
+       <h3 className="mb-4 fw-bold">¿Por qué elegir Rentify?</h3>
+       <div className="row justify-content-center">
+    <div className="col-12 col-md-4 mb-4">
+      <div className="p-3 border rounded shadow-sm h-100 d-flex flex-column align-items-center">
+        <i className="bi bi-speedometer2 fs-1 text-success mb-3"></i>
+        <h5>Arrendamiento rápido</h5>
+        <p>Encuentra tu inmueble ideal en minutos, sin comisiones ni intermediarios.</p>
+      </div>
     </div>
+    <div className="col-12 col-md-4 mb-4">
+      <div className="p-3 border rounded shadow-sm h-100 d-flex flex-column align-items-center">
+        <i className="bi bi-shield-check fs-1 text-success mb-3"></i>
+        <h5>Seguridad garantizada</h5>
+        <p>Operaciones transparentes y seguras para que tengas tranquilidad.</p>
+      </div>
+    </div>
+    <div className="col-12 col-md-4 mb-4">
+      <div className="p-3 border rounded shadow-sm h-100 d-flex flex-column align-items-center">
+        <i className="bi bi-people fs-1 text-success mb-3"></i>
+        <h5>Contacto directo</h5>
+        <p>Comunícate directamente con el propietario, sin intermediarios molestos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+    </div>
+
+
   );
 };
 
