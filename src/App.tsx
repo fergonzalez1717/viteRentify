@@ -4,7 +4,9 @@ import Home from "./paginas/home";
 import Nosotros from "./paginas/nosotros";   
 import Contacto from "./paginas/contacto";  
 import Arrienda from "./paginas/arrienda";
-import Login from "./paginas/login";      
+import Login from "./paginas/login";   
+import Registro from "./paginas/Registro";    
+import Perfil from "./paginas/perfil";
 
 function App() {
    const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -25,9 +27,8 @@ function App() {
     navigate("/"); // 🔹 redirige al Home sin recargar la página
   };
 
-
   return (
-        <div className="app-container">
+    <div className="app-container">
       {/* NAVBAR */}
       <nav className="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top w-100 shadow">
         <div className="container-fluid">
@@ -78,15 +79,14 @@ function App() {
         </div>
       </nav>
 
-
        {/* CONTENIDO PRINCIPAL */}
       <div className="main-content">
         <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/nosotros" element={<Nosotros />} />    // 👈 CORREGIDO
-        <Route path="/contacto" element={<Contacto />} />    // 👈 CORREGIDO
-        <Route path="/arrienda" element={<Arrienda />} />    // 👈 CORREGIDO
-         <Route
+          <Route path="/" element={<Home />} />
+          <Route path="/nosotros" element={<Nosotros />} />    
+          <Route path="/contacto" element={<Contacto />} />    
+          <Route path="/arrienda" element={<Arrienda />} />    
+          <Route
             path="/login"
             element={
               <Login
@@ -98,9 +98,17 @@ function App() {
               />
             }
           />
+
+          {/* Si el usuario está logueado, accede al perfil */}
+          {isLoggedIn ? (
+            <Route path="/perfil" element={<Perfil />} />
+          ) : (
+            <Route path="/perfil" element={<Home />} /> // Si no está logueado, redirige al Home
+          )}
+
+          <Route path="/registro" element={<Registro />} /> {/* Página de registro */}
         </Routes>
       </div>
-
 
       {/* FOOTER */}
       <footer className="footer text-center py-3 text-white">

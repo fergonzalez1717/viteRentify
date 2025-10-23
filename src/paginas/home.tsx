@@ -1,23 +1,19 @@
 import React from "react";
 import carusel1 from "../assets/carusel1.png"; 
 
-
-const Home: React.FC = () => { // Declara un componente funcional llamado Home, significa React Functional Component, y le dice a TypeScript que Home es un componente de React.
+const Home: React.FC = () => { 
   return (
     <div className="main-content">
-
-        {/* carrousel */}
-          <div
-            id="carouselExampleFade"
-            className="carousel slide carousel-fade mb-4"
-            data-bs-ride="carousel"
-            data-bs-interval={2000} // cambia cada 2 segundos
-          >
-
+      {/* CAROUSEL */}
+      <div
+        id="carouselExampleFade"
+        className="carousel slide carousel-fade mb-4"
+        data-bs-ride="carousel"
+        data-bs-interval={2000} // Cambia cada 2 segundos
+      >
         <div className="carousel-inner">
           <div className="carousel-item active">
             <img src={carusel1} className="d-block w-100" alt="imagen1" />
-
           </div>
           <div className="carousel-item">
             <img
@@ -34,16 +30,15 @@ const Home: React.FC = () => { // Declara un componente funcional llamado Home, 
             />
           </div>
         </div>
-         <button className="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
-         <span className="carousel-control-prev-icon" aria-hidden="true"></span>
+        <button className="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
+          <span className="carousel-control-prev-icon" aria-hidden="true"></span>
           <span className="visually-hidden">Previous</span>
-          </button>
-          <button className="carousel-control-next" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="next">
+        </button>
+        <button className="carousel-control-next" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="next">
           <span className="carousel-control-next-icon" aria-hidden="true"></span>
           <span className="visually-hidden">Next</span>
         </button>
-
-        </div>
+      </div>
 
       <h1 className="text-white fw-bold display-5">
         Bienvenidos a Rentify
@@ -52,10 +47,8 @@ const Home: React.FC = () => { // Declara un componente funcional llamado Home, 
         Arrendar es sencillo, directo y sin comisiones.
       </p>
 
-       {/* inicio buscador destacado */}
-      <section
-        className="hero-search-section "
-      >
+      {/* INICIO BUSCADOR DESTACADO */}
+      <section className="hero-search-section ">
         <p className="lead mb-3 text-center">
           Completa el buscador para encontrar tu inmueble ideal sin intermediarios.
         </p>
@@ -84,48 +77,42 @@ const Home: React.FC = () => { // Declara un componente funcional llamado Home, 
             </select>
           </div>
           <div className="col-12 mt-3 d-grid">
-          <button type="submit" className="btn btn-light">
-           Buscar
-           </button>
+            <button type="submit" className="btn btn-light">
+              Buscar
+            </button>
           </div>
         </form>
       </section>
-      {/* termino buscador destacado*/}
+      {/* TERMINO BUSCADOR DESTACADO */}
 
-
-
-
-      {/* Sección beneficios */}
-     <section className="container my-5 text-center">
-       <h3 className="mb-4 fw-bold">¿Por qué elegir Rentify?</h3>
-       <div className="row justify-content-center">
-    <div className="col-12 col-md-4 mb-4">
-      <div className="p-3 border rounded shadow-sm h-100 d-flex flex-column align-items-center">
-        <i className="bi bi-speedometer2 fs-1 text-success mb-3"></i>
-        <h5>Arrendamiento rápido</h5>
-        <p>Encuentra tu inmueble ideal en minutos, sin comisiones ni intermediarios.</p>
-      </div>
+      {/* SECCIÓN BENEFICIOS */}
+      <section className="container my-5 text-center">
+        <h3 className="mb-4 fw-bold">¿Por qué elegir Rentify?</h3>
+        <div className="row justify-content-center">
+          <div className="col-12 col-md-4 mb-4">
+            <div className="p-3 border rounded shadow-sm h-100 d-flex flex-column align-items-center">
+              <i className="bi bi-speedometer2 fs-1 text-success mb-3"></i>
+              <h5>Arrendamiento rápido</h5>
+              <p>Encuentra tu inmueble ideal en minutos, sin comisiones ni intermediarios.</p>
+            </div>
+          </div>
+          <div className="col-12 col-md-4 mb-4">
+            <div className="p-3 border rounded shadow-sm h-100 d-flex flex-column align-items-center">
+              <i className="bi bi-shield-check fs-1 text-success mb-3"></i>
+              <h5>Seguridad garantizada</h5>
+              <p>Operaciones transparentes y seguras para que tengas tranquilidad.</p>
+            </div>
+          </div>
+          <div className="col-12 col-md-4 mb-4">
+            <div className="p-3 border rounded shadow-sm h-100 d-flex flex-column align-items-center">
+              <i className="bi bi-people fs-1 text-success mb-3"></i>
+              <h5>Contacto directo</h5>
+              <p>Comunícate directamente con el propietario, sin intermediarios molestos.</p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
-    <div className="col-12 col-md-4 mb-4">
-      <div className="p-3 border rounded shadow-sm h-100 d-flex flex-column align-items-center">
-        <i className="bi bi-shield-check fs-1 text-success mb-3"></i>
-        <h5>Seguridad garantizada</h5>
-        <p>Operaciones transparentes y seguras para que tengas tranquilidad.</p>
-      </div>
-    </div>
-    <div className="col-12 col-md-4 mb-4">
-      <div className="p-3 border rounded shadow-sm h-100 d-flex flex-column align-items-center">
-        <i className="bi bi-people fs-1 text-success mb-3"></i>
-        <h5>Contacto directo</h5>
-        <p>Comunícate directamente con el propietario, sin intermediarios molestos.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-    </div>
-
-
   );
 };
 
