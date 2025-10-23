@@ -90,7 +90,7 @@ const Contacto: React.FC = () => {
       >
         {/* Campo Nombre */}
         <div className="mb-3">
-          <label htmlFor="nombre" className="form-label text-white">
+          <label htmlFor="nombre" className="form-label ">
             Nombre
           </label>
           <input
@@ -112,7 +112,7 @@ const Contacto: React.FC = () => {
 
         {/* Campo Apellidos */}
        <div className="mb-3">
-       <label htmlFor="apellidos" className="form-label text-white">
+       <label htmlFor="apellidos" className="form-label">
         Apellidos
        </label>
        <input
@@ -133,7 +133,7 @@ const Contacto: React.FC = () => {
 
         {/* Campo Email */}
         <div className="mb-3">
-          <label htmlFor="email" className="form-label text-white">
+          <label htmlFor="email" className="form-label ">
             Email
           </label>
           <input
@@ -152,7 +152,7 @@ const Contacto: React.FC = () => {
 
         {/* Campo Mensaje */}
         <div className="mb-3">
-          <label htmlFor="mensaje" className="form-label text-white">
+          <label htmlFor="mensaje" className="form-label">
             Mensaje
           </label>
           <textarea

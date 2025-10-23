@@ -3,9 +3,10 @@ import React from "react";
 // Declara un componente funcional llamado Nosotros, significa React Functional Component, y le dice a TypeScript que Nosotros es un componente de React.
 const Nosotros: React.FC = () => {
   return (
+    <>
+   <h1 className="text-white fw-bold display-5 mt-5" style={{ marginTop: '3rem' }}>Sobre Nosotros</h1>
     <div className="main-content">
     <div className="nosotros-container">
-      <h1 className="text-white fw-bold display-5">Sobre Nosotros </h1>
       <p className="lead text-white">
         <strong>Rentify</strong> es una plataforma inmobiliaria que permite gestionar propiedades de manera sencilla, directa y sin comisiones.
       </p>
@@ -16,6 +17,7 @@ const Nosotros: React.FC = () => {
       </p>
     </div>
     </div>
+    </>
   );
 };
 
