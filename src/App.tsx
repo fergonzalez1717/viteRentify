@@ -86,7 +86,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/nosotros" element={<Nosotros />} />    
           <Route path="/contacto" element={<Contacto />} />    
-          <Route path="/arrienda" element={<Arrienda />} />    
+          <Route path="/arrienda" element={<Arrienda />} /> 
+          <Route path="/registro" element={<Registro onRegisterSuccess={() => setIsLoggedIn(true)} />} />   
           <Route
             path="/login"
             element={
@@ -107,7 +108,8 @@ function App() {
             <Route path="/perfil" element={<Home />} /> // Si no está logueado, redirige al Home
           )}
 
-          <Route path="/registro" element={<Registro />} /> {/* Página de registro */}
+        <Route path="/registro" element={<Registro onRegisterSuccess={() => setIsLoggedIn(true)} />}
+        />
         </Routes>
       </div>
 

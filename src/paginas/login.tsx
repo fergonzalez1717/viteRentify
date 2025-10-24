@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const Login: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState<string>("");
@@ -49,9 +50,9 @@ const Login: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess }) => 
         {/* Enlace para redirigir al registro */}
         <p className="text-center mt-3">
           ¿No tienes cuenta?{" "}
-          <a href="/registro" className="text-primary">
+          <Link to="/registro" className="text-primary">
             Crear cuenta
-          </a>
+          </Link>
         </p>
       </div>
     </div>

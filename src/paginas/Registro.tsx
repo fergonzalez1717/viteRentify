@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const Registro: React.FC = () => {
+  const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,17 +32,22 @@ const Registro: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
 
-    // Aquí puedes guardar los datos del usuario, por ahora usaremos localStorage
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("userEmail", email);
+     // Guardar sesión
+     localStorage.setItem("isLoggedIn", "true");
+     localStorage.setItem("userEmail", email);
 
-    navigate("/perfil"); // Redirige al perfil después de registrarse
-  };
+      // Avisar a App que el usuario ya está logueado
+    onRegisterSuccess();
+
+     // Redirigir al perfil
+    navigate("/perfil");
+};
+
 
   return (
     <div className="main-content d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
