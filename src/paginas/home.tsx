@@ -1,4 +1,5 @@
 import React from "react";
+import Vistas from "./Vistas";
 import carusel1 from "../assets/carusel1.png"; 
 import { Link } from "react-router-dom";
 
@@ -139,6 +140,11 @@ const Home: React.FC = () => {
       </section>
     </div>
 
+    {/* Contador de personas viendo */}
+    <div className="text-center my-5">
+     <Vistas />
+    </div>
+
       {/* SECCIÓN DE COMENTARIOS / TARJETAS */}
       <section className="container my-5">
         <h3 className="mb-4 fw-bold text-center">Opiniones de nuestros usuarios</h3>
@@ -162,6 +168,8 @@ const Home: React.FC = () => {
         </div>
       </section>
     </>
+
+    
 
   );
 };
