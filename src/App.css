@@ -434,3 +434,13 @@ html, body {
   background-size: 20px 20px;
   background-repeat: repeat;
 }
+
+/* compensar el navbar fijo */
+.main-content {
+  padding-top: 80px; /* ajusta según la altura real de tu navbar */
+}
+
+/*la página Home no necesita ese padding */
+.home-page .main-content {
+  padding-top: 0;
+}

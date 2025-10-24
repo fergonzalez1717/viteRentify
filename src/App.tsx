@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate } from "react-router-dom";
+import { Routes, Route, Link, useNavigate,useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Home from "./paginas/home";
 import Nosotros from "./paginas/nosotros";   
@@ -11,7 +11,8 @@ import Perfil from "./paginas/perfil";
 function App() {
    const [isLoggedIn, setIsLoggedIn] = useState(false);
    const navigate = useNavigate(); // para navegación interna
-
+   const location = useLocation(); 
+  const isHome = location.pathname === "/";
     // Verificar sesión guardada
     useEffect(() => {
     const storedLogin = localStorage.getItem("isLoggedIn");
@@ -80,7 +81,7 @@ function App() {
       </nav>
 
        {/* CONTENIDO PRINCIPAL */}
-      <div className="main-content">
+      <div className={`main-content ${isHome && "home-page"}`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/nosotros" element={<Nosotros />} />    

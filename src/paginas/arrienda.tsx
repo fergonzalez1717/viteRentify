@@ -56,7 +56,7 @@ const Arrienda: React.FC = () => {
 
   return (
     <div className="container my-5">
-      <h1 className="text-center mb-4 text-white fw-bold">Arriendos Disponibles</h1>
+      <h1 className="text-center mb-4 e fw-bold">Arriendos Disponibles</h1>
       <div className="row g-4">
         {inmueble.map((m) => (
           <div className="col-md-4" key={m.id}>
