@@ -444,3 +444,63 @@ html, body {
 .home-page .main-content {
   padding-top: 0;
 }
+
+
+/* Tarjetas de opiniones */
+.comentario-card {
+  border-radius: 15px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.comentario-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.comentario-card .card-title {
+  font-weight: 600;
+  color: #343a40;
+}
+
+.comentario-card .card-text {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.comentario-card .text-warning {
+  font-size: 1rem;
+}
+
+/* TARJETA DESTACADA CENTRADA ABAJO */
+.propiedad-destacada .card-img-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Todo se alinea abajo */
+  align-items: center; /* Centra horizontalmente */
+  background: rgba(0, 0, 0, 0.4);
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center; /* Centra el texto */
+}
+
+.propiedad-destacada .card-img {
+  height: 300px; /* Ajusta a lo que te guste: 250px, 300px, 350px */
+  object-fit: cover; /* Hace que la imagen se recorte proporcionalmente */
+  border-radius: 15px; /* Opcional, coincide con el overlay */
+}
+
+.propiedad-destacada .card-title {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.propiedad-destacada .card-text {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.propiedad-destacada .btn {
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+}

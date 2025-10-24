@@ -1,9 +1,12 @@
 import React from "react";
 import carusel1 from "../assets/carusel1.png"; 
+import { Link } from "react-router-dom";
+
 
 const Home: React.FC = () => { 
   return (
-    <div className="main-content">
+    <>
+    <div className="main-content ">
       {/* CAROUSEL */}
       <div
         id="carouselExampleFade"
@@ -30,11 +33,21 @@ const Home: React.FC = () => {
             />
           </div>
         </div>
-        <button className="carousel-control-prev" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="prev">
+        <button 
+            className="carousel-control-prev"
+            type="button"
+            data-bs-target="#carouselExampleFade"
+            data-bs-slide="prev"
+          >
           <span className="carousel-control-prev-icon" aria-hidden="true"></span>
           <span className="visually-hidden">Previous</span>
         </button>
-        <button className="carousel-control-next" type="button" data-bs-target="#carouselExampleFade" data-bs-slide="next">
+        <button 
+          className="carousel-control-next"
+          type="button"
+          data-bs-target="#carouselExampleFade"
+          data-bs-slide="next"
+          >
           <span className="carousel-control-next-icon" aria-hidden="true"></span>
           <span className="visually-hidden">Next</span>
         </button>
@@ -85,6 +98,18 @@ const Home: React.FC = () => {
       </section>
       {/* TERMINO BUSCADOR DESTACADO */}
 
+{/* --- TARJETA DESTACADA --- */}
+<div className="container my-5 propiedad-destacada">
+  <div className="card text-white bg-warning shadow-lg border-0">
+    <img src="https://http2.mlstatic.com/D_NQ_NP_2X_871825-MLC84632999504_052025-O.webp" className="card-img" alt="Propiedad destacada"/>
+    <div className="card-img-overlay">
+      <h2 className="card-title fw-bold">Propiedad Destacada</h2>
+      <p className="card-text">La mejor opción para tu próximo hogar, revisa esta propiedad exclusiva Quilicura.</p>
+      <Link to="/login" className="btn btn-dark">Ver Más</Link>
+    </div>
+  </div>
+</div>
+
       {/* SECCIÓN BENEFICIOS */}
       <section className="container my-5 text-center">
         <h3 className="mb-4 fw-bold">¿Por qué elegir Rentify?</h3>
@@ -113,6 +138,31 @@ const Home: React.FC = () => {
         </div>
       </section>
     </div>
+
+      {/* SECCIÓN DE COMENTARIOS / TARJETAS */}
+      <section className="container my-5">
+        <h3 className="mb-4 fw-bold text-center">Opiniones de nuestros usuarios</h3>
+        <div className="row g-4">
+          {[
+            { name: "Ana G.", text: "Excelente experiencia, encontré mi departamento ideal muy rápido.", stars: "★★★★★" },
+            { name: "Carlos M.", text: "Muy buena atención y proceso transparente, recomiendo Rentify.", stars: "★★★★☆" },
+            { name: "Camilo R.", text: "El buscador es súper fácil de usar y los resultados son precisos.", stars: "★★★★★" },
+            { name: "Jorge G.", text: "Muy recomendable, todo el proceso fue rápido y seguro.", stars: "★★★★☆" },
+          ].map((opinion, idx) => (
+            <div className="col-12 col-md-6 col-lg-3" key={idx}>
+              <div className="card h-100 shadow-sm comentario-card">
+                <div className="card-body">
+                  <h5 className="card-title">{opinion.name}</h5>
+                  <p className="card-text">{opinion.text}</p>
+                  <p className="text-warning mb-0">{opinion.stars}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+
   );
 };
 
