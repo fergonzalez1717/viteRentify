@@ -13,7 +13,9 @@ describe("Login Component", () => {
 
     expect(screen.getByLabelText(/correo electrónico/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/contraseña/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /iniciar sesión/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /iniciar sesión/i })
+    ).toBeInTheDocument();
   });
 
   it("no llama a onLogin si faltan datos", () => {
@@ -26,27 +28,31 @@ describe("Login Component", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /iniciar sesión/i }));
 
-    // Como no se ingresó nada, no debe llamar a onLogin
     expect(onLogin).not.toHaveBeenCalled();
   });
 
-  it("llama a onLogin con correo y contraseña ingresados", () => {
-    const onLogin = vi.fn();
-    render(
-      <MemoryRouter>
-        <Login onLogin={onLogin} />
-      </MemoryRouter>
-    );
+  // ✅ Testea ambos correos válidos
+  const correosPermitidos = ["da.olaver@duocuc.cl", "fs.gonzalez@duocuc.cl"];
 
-    fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
-      target: { value: "vega@gmail.com" },
+  correosPermitidos.forEach((correo) => {
+    it(`llama a onLogin con correo válido: ${correo}`, () => {
+      const onLogin = vi.fn();
+      render(
+        <MemoryRouter>
+          <Login onLogin={onLogin} />
+        </MemoryRouter>
+      );
+
+      fireEvent.change(screen.getByLabelText(/correo electrónico/i), {
+        target: { value: correo },
+      });
+      fireEvent.change(screen.getByLabelText(/contraseña/i), {
+        target: { value: "1234" },
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: /iniciar sesión/i }));
+
+      expect(onLogin).toHaveBeenCalledWith(correo, "1234");
     });
-    fireEvent.change(screen.getByLabelText(/contraseña/i), {
-      target: { value: "1234" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: /iniciar sesión/i }));
-
-    expect(onLogin).toHaveBeenCalledWith("vega@gmail.com", "1234");
   });
 });

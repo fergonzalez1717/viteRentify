@@ -15,7 +15,6 @@ function App() {
 
   const isHome = location.pathname === "/";
 
-  // Verificar sesión guardada al cargar la app
   useEffect(() => {
     const storedLogin = localStorage.getItem("isLoggedIn");
     if (storedLogin === "true") {
@@ -23,7 +22,6 @@ function App() {
     }
   }, []);
 
-  // Función para manejar login (recibe email y password de Login.tsx)
   const handleLogin = (email: string, password: string) => {
     const correosPermitidos = ["da.olaver@duocuc.cl", "fs.gonzalez@duocuc.cl"];
 
@@ -33,13 +31,12 @@ function App() {
     ) {
       localStorage.setItem("isLoggedIn", "true");
       setIsLoggedIn(true);
-      navigate("/"); // Redirige al home
+      navigate("/");
     } else {
       alert("Correo o contraseña incorrectos");
     }
   };
 
-  // Cerrar sesión
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
     setIsLoggedIn(false);
@@ -48,7 +45,6 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* NAVBAR */}
       <nav className="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top w-100 shadow">
         <div className="container-fluid">
           <Link className="navbar-brand fw-bold" to="/">Rentify</Link>
@@ -88,24 +84,20 @@ function App() {
         </div>
       </nav>
 
-      {/* CONTENIDO PRINCIPAL */}
-      <div className={`main-content ${isHome ? "home-page" : ""}`} style={{ marginTop: "80px" }}>
+      <div
+        className={`main-content ${isHome ? "home-page" : ""}`}
+        style={{ marginTop: isHome? "0" : "80px", minHeight: "calc(100vh - 160px)" }}
+      >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/arrienda" element={<Arrienda />} />
-
-          {/* Login */}
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
-
-          {/* Registro */}
           <Route
             path="/registro"
             element={<Registro onRegisterSuccess={() => setIsLoggedIn(true)} />}
           />
-
-          {/* Perfil protegido */}
           <Route
             path="/perfil"
             element={isLoggedIn ? <Perfil /> : <Home />}
@@ -113,9 +105,17 @@ function App() {
         </Routes>
       </div>
 
-      {/* FOOTER */}
       <footer className="footer text-center py-3 text-white">
         © 2025 Rentify - Todos los derechos reservados
+        <p>Síguenos en nuestras RRSS:</p>
+        <div className="mt-2">
+          <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" style={{ margin: "0 10px" }}>
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" width={25} height={25} />
+          </a>
+          <a href="https://www.twitter.com" target="_blank" rel="noopener noreferrer" style={{ margin: "0 10px" }}>
+            <img src="https://cdn.pixabay.com/photo/2017/08/23/11/30/twitter-2672572_640.jpg" alt="Twitter" width={25} height={25} />
+          </a>
+        </div>
       </footer>
     </div>
   );
