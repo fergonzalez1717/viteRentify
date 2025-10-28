@@ -1,58 +1,62 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
-const Login: React.FC<{ onLoginSuccess: () => void }> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const navigate = useNavigate();
+interface LoginProps {
+  onLogin: (email: string, password: string) => void; // App.tsx le pasa esta función
+}
 
-  // Manejo del inicio de sesión (simulado)
-  const handleLogin = () => {
-    // Aquí podrías agregar la lógica de validación del login (por ejemplo, verificar con una API)
-    if (email && password) {
-      // Guardamos el estado de login en el localStorage
-      localStorage.setItem("isLoggedIn", "true");
-      onLoginSuccess();
-      navigate("/"); // Redirigir a Home después de iniciar sesión
-    }
-  };
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+    const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+  if (!email || !password) {
+    alert("Por favor ingrese correo y contraseña");
+    return; //No llama a onLogin si faltan datos
+  }
+
+  onLogin(email, password);
+};
+
 
   return (
     <div className="main-content d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
       <div className="login-container p-4 bg-light rounded shadow" style={{ width: "100%", maxWidth: "400px" }}>
         <h2 className="text-center mb-4">Iniciar sesión</h2>
 
-        <div className="mb-3">
-          <label htmlFor="email" className="form-label fw-bold">Correo electrónico</label>
-          <input
-            type="email"
-            id="email"
-            className="form-control"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label fw-bold">Correo electrónico</label>
+            <input
+              type="email"
+              id="email"
+              className="form-control"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-        <div className="mb-3">
-          <label htmlFor="password" className="form-label fw-bold">Contraseña</label>
-          <input
-            type="password"
-            id="password"
-            className="form-control"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
+          <div className="mb-3">
+            <label htmlFor="password" className="form-label fw-bold">Contraseña</label>
+            <input
+              type="password"
+              id="password"
+              className="form-control"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-        <button onClick={handleLogin} className="btn btn-primary w-100 mt-2">Iniciar sesión</button>
+          <button type="submit" className="btn btn-primary w-100 mt-2">Iniciar sesión</button>
+        </form>
 
-        {/* Enlace para redirigir al registro */}
         <p className="text-center mt-3">
           ¿No tienes cuenta?{" "}
-          <Link to="/registro" className="text-primary">
-            Crear cuenta
-          </Link>
+          <Link to="/registro" className="text-primary">Crear cuenta</Link>
         </p>
       </div>
     </div>
