@@ -7,6 +7,8 @@ import Arrienda from "./paginas/arrienda";
 import Login from "./paginas/login";
 import Registro from "./paginas/Registro";
 import Perfil from "./paginas/perfil";
+import Valoraciones from "./paginas/Valoraciones";
+
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -64,21 +66,27 @@ function App() {
               <li className="nav-item"><Link className="nav-link" to="/arrienda">Arrienda</Link></li>
               <li className="nav-item"><Link className="nav-link" to="/contacto">Contacto</Link></li>
 
-              {!isLoggedIn ? (
-                <li className="nav-item">
-                  <Link className="nav-link" to="/login">Iniciar sesión</Link>
-                </li>
-              ) : (
-                <li className="nav-item">
-                  <button
-                    onClick={handleLogout}
-                    className="btn btn-outline-light ms-2"
-                    style={{ borderRadius: "20px", padding: "5px 15px" }}
-                  >
-                    Cerrar sesión
-                  </button>
-                </li>
-              )}
+      {!isLoggedIn ? (
+        <li className="nav-item">
+        <Link className="nav-link" to="/login">Iniciar sesión</Link>
+        </li>
+      ) : (
+       <>
+       <li className="nav-item">
+        <Link className="nav-link" to="/valoraciones">Valoraciones</Link>
+      </li>
+      <li className="nav-item">
+      <button
+        onClick={handleLogout}
+        className="btn btn-outline-light ms-2"
+        style={{ borderRadius: "20px", padding: "5px 15px" }}
+           >
+          Cerrar sesión
+         </button>
+         </li>
+        </>
+         )}
+
             </ul>
           </div>
         </div>
@@ -94,6 +102,8 @@ function App() {
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/arrienda" element={<Arrienda />} />
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/valoraciones" element={isLoggedIn ? <Valoraciones /> : <Home />} />
+
           <Route
             path="/registro"
             element={<Registro onRegisterSuccess={() => setIsLoggedIn(true)} />}
