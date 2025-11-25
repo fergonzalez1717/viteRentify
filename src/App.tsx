@@ -8,7 +8,7 @@ import Login from "./paginas/login";
 import Registro from "./paginas/Registro";
 import Perfil from "./paginas/perfil";
 import Valoraciones from "./paginas/Valoraciones";
-
+import GestionPropiedades from "./paginas/GestionPropiedades";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -16,22 +16,25 @@ function App() {
   const location = useLocation();
 
   const isHome = location.pathname === "/";
+  const userRole = localStorage.getItem("userRole") || "";
 
   useEffect(() => {
     const storedLogin = localStorage.getItem("isLoggedIn");
-    if (storedLogin === "true") {
-      setIsLoggedIn(true);
-    }
+    if (storedLogin === "true") setIsLoggedIn(true);
   }, []);
 
   const handleLogin = (email: string, password: string) => {
+    let role = "";
+    if (email.toLowerCase() === "da.olaver@duocuc.cl") role = "ADMIN";
+    else if (email.toLowerCase() === "fs.gonzalez@duocuc.cl") role = "PROPIETARIO";
+    else role = "ARRIENDATARIO";
+
     const correosPermitidos = ["da.olaver@duocuc.cl", "fs.gonzalez@duocuc.cl"];
 
-    if (
-      correosPermitidos.map(c => c.toLowerCase()).includes(email.toLowerCase()) &&
-      password === "1234"
-    ) {
+    if (correosPermitidos.map(c => c.toLowerCase()).includes(email.toLowerCase()) && password === "1234") {
       localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userRole", role);
       setIsLoggedIn(true);
       navigate("/");
     } else {
@@ -41,6 +44,8 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userRole");
     setIsLoggedIn(false);
     navigate("/");
   };
@@ -50,12 +55,7 @@ function App() {
       <nav className="navbar navbar-expand-lg navbar-dark navbar-custom fixed-top w-100 shadow">
         <div className="container-fluid">
           <Link className="navbar-brand fw-bold" to="/">Rentify</Link>
-          <button
-            className="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav"
-          >
+          <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span className="navbar-toggler-icon"></span>
           </button>
 
@@ -66,27 +66,32 @@ function App() {
               <li className="nav-item"><Link className="nav-link" to="/arrienda">Arrienda</Link></li>
               <li className="nav-item"><Link className="nav-link" to="/contacto">Contacto</Link></li>
 
-      {!isLoggedIn ? (
-        <li className="nav-item">
-        <Link className="nav-link" to="/login">Iniciar sesión</Link>
-        </li>
-      ) : (
-       <>
-       <li className="nav-item">
-        <Link className="nav-link" to="/valoraciones">Valoraciones</Link>
-      </li>
-      <li className="nav-item">
-      <button
-        onClick={handleLogout}
-        className="btn btn-outline-light ms-2"
-        style={{ borderRadius: "20px", padding: "5px 15px" }}
-           >
-          Cerrar sesión
-         </button>
-         </li>
-        </>
-         )}
-
+              {!isLoggedIn ? (
+                <li className="nav-item">
+                  <Link className="nav-link" to="/login">Iniciar sesión</Link>
+                </li>
+              ) : (
+                <>
+                  {(userRole === "PROPIETARIO" || userRole === "ADMIN") && (
+                    <li className="nav-item">
+                      <Link className="nav-link" to="/gestion-propiedades">Mis Propiedades</Link>
+                    </li>
+                  )}
+                  
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/valoraciones">Valoraciones</Link>
+                  </li>
+                  <li className="nav-item">
+                    <button
+                      onClick={handleLogout}
+                      className="btn btn-outline-light ms-2"
+                      style={{ borderRadius: "20px", padding: "5px 15px" }}
+                    >
+                      Cerrar sesión
+                    </button>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
         </div>
@@ -94,24 +99,20 @@ function App() {
 
       <div
         className={`main-content ${isHome ? "home-page" : ""}`}
-        style={{ marginTop: isHome? "0" : "80px", minHeight: "calc(100vh - 160px)" }}
+        style={{ marginTop: isHome ? "0" : "80px", minHeight: "calc(100vh - 160px)" }}
       >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/arrienda" element={<Arrienda />} />
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
-          <Route path="/valoraciones" element={isLoggedIn ? <Valoraciones /> : <Home />} />
 
-          <Route
-            path="/registro"
-            element={<Registro onRegisterSuccess={() => setIsLoggedIn(true)} />}
-          />
-          <Route
-            path="/perfil"
-            element={isLoggedIn ? <Perfil /> : <Home />}
-          />
+          <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/registro" element={<Registro onRegisterSuccess={() => setIsLoggedIn(true)} />} />
+
+          <Route path="/perfil" element={<Perfil />} />
+          <Route path="/gestion-propiedades" element={<GestionPropiedades />} />
+          <Route path="/valoraciones" element={<Valoraciones />} />
         </Routes>
       </div>
 

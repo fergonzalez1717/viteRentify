@@ -1,19 +1,37 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-  const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSuccess }) => {
+// Definimos los tipos de rol para tener un código más limpio y tipado.
+type Rol = "PROPIETARIO" | "ARRIENDATARIO" | "";
+
+const Registro: React.FC<{ onRegisterSuccess: () => void }> = ({ onRegisterSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  // Estado para almacenar el rol seleccionado.
+  const [rol, setRol] = useState<Rol>("");
+  const [errors, setErrors] = useState<{ 
+    email?: string; 
+    password?: string; 
+    confirmPassword?: string; 
+    // Error para la validación del rol.
+    rol?: string; 
+  }>({});
   const navigate = useNavigate();
 
   const validate = (): boolean => {
-    const newErrors: { email?: string; password?: string; confirmPassword?: string } = {};
+    const newErrors: { 
+        email?: string; 
+        password?: string; 
+        confirmPassword?: string; 
+        rol?: string; 
+    } = {};
 
     if (!email) {
       newErrors.email = "El correo es obligatorio";
-    } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
+    } 
+    // CORRECCIÓN DE REGEX: El patrón ahora es correcto para la validación de email.
+    else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) { 
       newErrors.email = "Formato de correo inválido";
     }
 
@@ -26,6 +44,11 @@ import { useNavigate } from "react-router-dom";
     if (password !== confirmPassword) {
       newErrors.confirmPassword = "Las contraseñas no coinciden";
     }
+    
+    // Validación para asegurar que se seleccione un rol.
+    if (!rol) {
+        newErrors.rol = "Debe seleccionar un tipo de cuenta";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -35,10 +58,16 @@ import { useNavigate } from "react-router-dom";
     e.preventDefault();
 
     if (!validate()) return;
+    
+    // En este punto, los datos están validados y listos para enviar al microservicio
+    console.log("Datos de Registro listos:", { email, password, rol });
 
      // Guardar sesión
      localStorage.setItem("isLoggedIn", "true");
      localStorage.setItem("userEmail", email);
+     // IMPORTANTE: Aquí deberías guardar el rol. Lo pongo aquí temporalmente, 
+     // pero idealmente el rol lo confirmaría el microservicio al registrar.
+     localStorage.setItem("userRole", rol); 
 
       // Avisar a App que el usuario ya está logueado
     onRegisterSuccess();
@@ -50,7 +79,8 @@ import { useNavigate } from "react-router-dom";
 
   return (
     <div className="main-content d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
-      <div className="login-container p-4 bg-light rounded shadow" style={{ width: "100%", maxWidth: "400px" }}>
+      {/* Contenedor con la clase de diseño del formulario de contacto */}
+      <div className="contact-form-container p-4 rounded shadow-lg" style={{ width: "100%", maxWidth: "400px" }}>
         <h2 className="text-center mb-4 text-primary">Crear cuenta</h2>
         <form onSubmit={handleSubmit} className="login-form">
           <div className="mb-3">
@@ -88,6 +118,44 @@ import { useNavigate } from "react-router-dom";
             />
             {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
           </div>
+          
+          {/* Campo de Selección de Rol con Margen Fuerte */}
+          <div className="mb-3">
+            <label className={`form-label fw-bold ${errors.rol ? "text-danger" : ""}`}>Tipo de Cuenta</label>
+            {/* Se usa justify-content-center y 'me-5' para dar un margen más fuerte */}
+            <div className="d-flex justify-content-center"> 
+                <div className="form-check me-5"> {/* Margen fuerte a la derecha */}
+                    <input
+                        className={`form-check-input ${errors.rol ? "is-invalid" : ""}`}
+                        type="radio"
+                        name="rolOptions"
+                        id="rolPropietario"
+                        value="PROPIETARIO"
+                        checked={rol === "PROPIETARIO"}
+                        onChange={(e) => setRol(e.target.value as Rol)}
+                    />
+                    <label className="form-check-label" htmlFor="rolPropietario">
+                        Propietario
+                    </label>
+                </div>
+                <div className="form-check">
+                    <input
+                        className={`form-check-input ${errors.rol ? "is-invalid" : ""}`}
+                        type="radio"
+                        name="rolOptions"
+                        id="rolArrendatario"
+                        value="ARRIENDATARIO"
+                        checked={rol === "ARRIENDATARIO"}
+                        onChange={(e) => setRol(e.target.value as Rol)}
+                    />
+                    <label className="form-check-label" htmlFor="rolArrendatario">
+                        Arrendatario
+                    </label>
+                </div>
+            </div>
+             {errors.rol && <div className="invalid-feedback d-block text-center mt-2">{errors.rol}</div>}
+          </div>
+          {/* Fin Campo de Selección de Rol */}
 
           <button type="submit" className="btn btn-primary w-100 mt-2">
             Registrarse

@@ -142,7 +142,7 @@ const Perfil: React.FC = () => {
 
         {/* RUT */}
         <div className="mb-3">
-          <label htmlFor="rut" className="form-label fw-bold">RUT</label>
+          <label htmlFor="rut" className="form-label fw-bold">R U T</label>
           <input
             type="text"
             id="rut"
