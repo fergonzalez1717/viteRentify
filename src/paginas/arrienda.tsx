@@ -11,6 +11,7 @@ interface Inmueble {
 }
 
 const Arrienda: React.FC = () => {
+  // Lista de inmuebles disponibles
   const inmueble: Inmueble[] = [
     {
       id: 1,
@@ -88,30 +89,81 @@ const Arrienda: React.FC = () => {
 
   const [showModal, setShowModal] = useState(false);
   const [selectedInmueble, setSelectedInmueble] = useState<Inmueble | null>(null);
+  
+  // Estado para el mensaje de postulación
+  const [estadoPostulacion, setEstadoPostulacion] = useState("");
 
   const handleArrendarClick = (m: Inmueble) => {
     setSelectedInmueble(m);
     setShowModal(true);
+    // Limpiar mensaje anterior si existe
+    setEstadoPostulacion("");
   };
 
   const handlePostular = () => {
+    
     setShowModal(false);
-    alert("Tu solicitud fue ingresada, te enviaremos un correo de confirmación.");
+    
+    // 2. Establecer el mensaje de éxito
+    setEstadoPostulacion(`Tu solicitud para el arriendo en ${selectedInmueble?.direccion} fue ingresada. Te enviaremos un correo de confirmación pronto.`);
+    
+    // 3. Ocultar el mensaje automáticamente después de 5 segundos (5000ms)
+    setTimeout(() => {
+      setEstadoPostulacion("");
+    }, 5000);
   };
 
   return (
     <>
+      {/* ----------------- Mensaje Flotante de Postulación Exitosa (Modal Ligero) ----------------- */}
+      {estadoPostulacion && (
+        <div
+          className="d-flex justify-content-center align-items-center"
+        
+          style={{ 
+            backgroundColor: "rgba(0,0,0,0.4)", 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            width: '100%', 
+            height: '100%', 
+            zIndex: 2000 
+          }}
+        >
+          {/* Contenedor del mensaje, usando clases de Bootstrap para el estilo */}
+          <div 
+            className="alert alert-success p-4 rounded-3 shadow-lg text-center"
+            style={{ 
+              maxWidth: '90%', 
+              width: '400px', 
+              // Estilos para que el mensaje destaque sobre el fondo semitransparente
+              backgroundColor: '#d4edda', 
+              color: '#155724', 
+              border: '1px solid #c3e6cb'
+            }}
+            role="alert"
+          >
+            <h4 className="alert-heading fw-bold mb-2">✅ ¡Solicitud Enviada!</h4>
+            <p className="mb-0">{estadoPostulacion}</p>
+          </div>
+        </div>
+      )}
+      {/* ----------------- Fin Mensaje Flotante ----------------- */}
+
+
       <div className="container my-5">
         <h1 className="text-center mb-4 e fw-bold">Arriendos Disponibles</h1>
         <div className="row g-4">
           {inmueble.map((m) => (
             <div className="col-md-4" key={m.id}>
-              <div className="card shadow-sm h-100">
+             
+              <div className="card shadow-sm h-100"> 
                 <img src={m.imagen} className="card-img-top pet-image" alt={m.nombre} />
                 <div className="card-body">
                   <h5 className="card-title">{m.nombre}</h5>
                   <p className="card-text">{m.descripcion}</p>
                   <p className="fw-bold">Precio: ${m.precio.toLocaleString('es-CL')}</p>
+                 
                   <button className="btn btn-primary w-100" onClick={() => handleArrendarClick(m)}>
                     Arrendar
                   </button>
@@ -126,7 +178,8 @@ const Arrienda: React.FC = () => {
         <div
           className="modal d-block"
           tabIndex={-1}
-          style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+         
+          style={{ backgroundColor: "rgba(0,0,0,0.6)", position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1050 }} 
         >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
@@ -141,13 +194,16 @@ const Arrienda: React.FC = () => {
               <div className="modal-body">
                 <p>{selectedInmueble.descripcion}</p>
                 <p><strong>Dirección:</strong> {selectedInmueble.direccion}</p>
-                <div className="d-flex gap-2">
+                <div className="d-flex gap-2 justify-content-center flex-wrap">
+                  
                   {selectedInmueble.fotosAdicionales?.map((foto, idx) => (
-                    <img key={idx} src={foto} alt={`Foto ${idx + 1}`} style={{ width: "50%" }} />
+                   
+                    <img key={idx} src={foto} alt={`Foto ${idx + 1}`} style={{ width: "48%", objectFit: "cover", height: "150px", borderRadius: "8px" }} className="shadow-sm" />
                   ))}
                 </div>
               </div>
               <div className="modal-footer">
+                {/* Botón que dispara la función modificada */}
                 <button className="btn btn-success" onClick={handlePostular}>
                   Postular a este arriendo
                 </button>
