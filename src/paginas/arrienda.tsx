@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { solicitudService } from "../api";
+import type { CrearSolicitudRequest } from "../api";
 
 interface Inmueble {
   id: number;
@@ -90,36 +92,107 @@ const Arrienda: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedInmueble, setSelectedInmueble] = useState<Inmueble | null>(null);
   
-  // Estado para el mensaje de postulación
+  // Estados para el manejo de la postulación
   const [estadoPostulacion, setEstadoPostulacion] = useState("");
+  const [tipoMensaje, setTipoMensaje] = useState<"success" | "error">("success");
+  const [cargandoPostulacion, setCargandoPostulacion] = useState(false);
 
   const handleArrendarClick = (m: Inmueble) => {
     setSelectedInmueble(m);
     setShowModal(true);
-    // Limpiar mensaje anterior si existe
     setEstadoPostulacion("");
   };
 
-  const handlePostular = () => {
-    
+  const handlePostular = async () => {
+    // Verificar si el usuario está logueado
+    const isLoggedIn = localStorage.getItem("isLoggedIn");
+    if (isLoggedIn !== "true") {
+      setTipoMensaje("error");
+      setEstadoPostulacion("Debes iniciar sesión para postular a un arriendo.");
+      setTimeout(() => setEstadoPostulacion(""), 5000);
+      setShowModal(false);
+      return;
+    }
+
+    // Verificar rol del usuario
+    const userRole = localStorage.getItem("userRole");
+    if (userRole !== "ARRIENDATARIO" && userRole !== "ADMIN") {
+      setTipoMensaje("error");
+      setEstadoPostulacion("Solo usuarios con rol ARRIENDATARIO pueden postular a arriendos.");
+      setTimeout(() => setEstadoPostulacion(""), 5000);
+      setShowModal(false);
+      return;
+    }
+
+    if (!selectedInmueble) return;
+
+    setCargandoPostulacion(true);
     setShowModal(false);
-    
-    // 2. Establecer el mensaje de éxito
-    setEstadoPostulacion(`Tu solicitud para el arriendo en ${selectedInmueble?.direccion} fue ingresada. Te enviaremos un correo de confirmación pronto.`);
-    
-    // 3. Ocultar el mensaje automáticamente después de 5 segundos (5000ms)
-    setTimeout(() => {
-      setEstadoPostulacion("");
-    }, 5000);
+
+    try {
+      // TODO: Obtener el userId real desde tu sistema de autenticación
+      // Por ahora usamos un ID temporal para desarrollo
+      const userId = 1; // IMPORTANTE: Reemplazar con el ID real del usuario logueado
+      
+      // Crear la solicitud usando el microservicio
+      const solicitud: CrearSolicitudRequest = {
+        usuarioId: userId,
+        propiedadId: selectedInmueble.id,
+      };
+
+      const resultado = await solicitudService.crearSolicitud(solicitud);
+
+      // Éxito - Mostrar mensaje positivo
+      setTipoMensaje("success");
+      setEstadoPostulacion(
+        `¡Solicitud enviada con éxito! 🎉\n` +
+        `Tu solicitud para el arriendo en ${selectedInmueble.direccion} ` +
+        `ha sido registrada con el ID #${resultado.id}. ` +
+        `Te contactaremos pronto.`
+      );
+
+      console.log("Solicitud creada exitosamente:", resultado);
+    } catch (error) {
+      // Error - Mostrar mensaje de error
+      setTipoMensaje("error");
+      
+      let mensajeError = "Hubo un problema al procesar tu solicitud. ";
+      
+      if (error instanceof Error) {
+        // Personalizar mensajes de error comunes
+        if (error.message.includes("documentos aprobados")) {
+          mensajeError = "⚠️ Debes tener todos tus documentos aprobados antes de postular.";
+        } else if (error.message.includes("máximo permitido")) {
+          mensajeError = "⚠️ Has alcanzado el límite de 3 solicitudes activas.";
+        } else if (error.message.includes("solicitud pendiente")) {
+          mensajeError = "⚠️ Ya tienes una solicitud pendiente para esta propiedad.";
+        } else if (error.message.includes("no existe")) {
+          mensajeError = "⚠️ No se pudo verificar la información. Intenta nuevamente.";
+        } else if (error.message.includes("Failed to fetch") || error.message.includes("Network")) {
+          mensajeError = "⚠️ No se pudo conectar con el servidor. Verifica que el microservicio esté corriendo.";
+        } else {
+          mensajeError += error.message;
+        }
+      }
+      
+      setEstadoPostulacion(mensajeError);
+      console.error("Error al crear solicitud:", error);
+    } finally {
+      setCargandoPostulacion(false);
+      
+      // Ocultar mensaje después de 7 segundos
+      setTimeout(() => {
+        setEstadoPostulacion("");
+      }, 7000);
+    }
   };
 
   return (
     <>
-      {/* ----------------- Mensaje Flotante de Postulación Exitosa (Modal Ligero) ----------------- */}
+      {/* ----------------- Mensaje Flotante de Postulación ----------------- */}
       {estadoPostulacion && (
         <div
           className="d-flex justify-content-center align-items-center"
-        
           style={{ 
             backgroundColor: "rgba(0,0,0,0.4)", 
             position: 'fixed', 
@@ -129,43 +202,74 @@ const Arrienda: React.FC = () => {
             height: '100%', 
             zIndex: 2000 
           }}
+          onClick={() => setEstadoPostulacion("")} // Click para cerrar
         >
-          {/* Contenedor del mensaje, usando clases de Bootstrap para el estilo */}
           <div 
-            className="alert alert-success p-4 rounded-3 shadow-lg text-center"
+            className={`alert ${tipoMensaje === "success" ? "alert-success" : "alert-danger"} p-4 rounded-3 shadow-lg text-center`}
             style={{ 
               maxWidth: '90%', 
-              width: '400px', 
-              // Estilos para que el mensaje destaque sobre el fondo semitransparente
-              backgroundColor: '#d4edda', 
-              color: '#155724', 
-              border: '1px solid #c3e6cb'
+              width: '500px',
+              backgroundColor: tipoMensaje === "success" ? '#d4edda' : '#f8d7da',
+              color: tipoMensaje === "success" ? '#155724' : '#721c24',
+              border: `1px solid ${tipoMensaje === "success" ? '#c3e6cb' : '#f5c6cb'}`,
+              cursor: 'pointer'
             }}
             role="alert"
+            onClick={(e) => e.stopPropagation()} // Evitar cerrar al hacer click en el mensaje
           >
-            <h4 className="alert-heading fw-bold mb-2">✅ ¡Solicitud Enviada!</h4>
-            <p className="mb-0">{estadoPostulacion}</p>
+            <h4 className="alert-heading fw-bold mb-2">
+              {tipoMensaje === "success" ? "¡Solicitud Enviada!" : " Error"}
+            </h4>
+            <p className="mb-0" style={{ whiteSpace: 'pre-line' }}>
+              {estadoPostulacion}
+            </p>
+            <button 
+              className="btn btn-sm btn-secondary mt-3"
+              onClick={() => setEstadoPostulacion("")}
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}
       {/* ----------------- Fin Mensaje Flotante ----------------- */}
 
+      {/* Spinner de carga mientras se procesa la solicitud */}
+      {cargandoPostulacion && (
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ 
+            backgroundColor: "rgba(0,0,0,0.6)", 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            width: '100%', 
+            height: '100%', 
+            zIndex: 2000 
+          }}
+        >
+          <div className="text-center text-white">
+            <div className="spinner-border" role="status" style={{ width: '3rem', height: '3rem' }}>
+              <span className="visually-hidden">Cargando...</span>
+            </div>
+            <p className="mt-3 fs-5">Enviando solicitud...</p>
+          </div>
+        </div>
+      )}
 
       <div className="container my-5">
         <h1 className="text-center mb-4 e fw-bold">Arriendos Disponibles</h1>
         <div className="row g-4">
           {inmueble.map((m) => (
             <div className="col-md-4" key={m.id}>
-             
               <div className="card shadow-sm h-100"> 
                 <img src={m.imagen} className="card-img-top pet-image" alt={m.nombre} />
                 <div className="card-body">
                   <h5 className="card-title">{m.nombre}</h5>
                   <p className="card-text">{m.descripcion}</p>
                   <p className="fw-bold">Precio: ${m.precio.toLocaleString('es-CL')}</p>
-                 
                   <button className="btn btn-primary w-100" onClick={() => handleArrendarClick(m)}>
-                    Arrendar
+                    Ver Detalles
                   </button>
                 </div>
               </div>
@@ -174,11 +278,11 @@ const Arrienda: React.FC = () => {
         </div>
       </div>
 
+      {/* Modal de detalles del inmueble */}
       {showModal && selectedInmueble && (
         <div
           className="modal d-block"
           tabIndex={-1}
-         
           style={{ backgroundColor: "rgba(0,0,0,0.6)", position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1050 }} 
         >
           <div className="modal-dialog modal-dialog-centered">
@@ -194,18 +298,33 @@ const Arrienda: React.FC = () => {
               <div className="modal-body">
                 <p>{selectedInmueble.descripcion}</p>
                 <p><strong>Dirección:</strong> {selectedInmueble.direccion}</p>
+                <p><strong>Precio Mensual:</strong> ${selectedInmueble.precio.toLocaleString('es-CL')}</p>
                 <div className="d-flex gap-2 justify-content-center flex-wrap">
-                  
                   {selectedInmueble.fotosAdicionales?.map((foto, idx) => (
-                   
-                    <img key={idx} src={foto} alt={`Foto ${idx + 1}`} style={{ width: "48%", objectFit: "cover", height: "150px", borderRadius: "8px" }} className="shadow-sm" />
+                    <img 
+                      key={idx} 
+                      src={foto} 
+                      alt={`Foto ${idx + 1}`} 
+                      style={{ width: "48%", objectFit: "cover", height: "150px", borderRadius: "8px" }} 
+                      className="shadow-sm" 
+                    />
                   ))}
                 </div>
               </div>
               <div className="modal-footer">
-                {/* Botón que dispara la función modificada */}
-                <button className="btn btn-success" onClick={handlePostular}>
-                  Postular a este arriendo
+                <button 
+                  className="btn btn-success" 
+                  onClick={handlePostular}
+                  disabled={cargandoPostulacion}
+                >
+                  {cargandoPostulacion ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      Enviando...
+                    </>
+                  ) : (
+                    "Postular a este arriendo"
+                  )}
                 </button>
                 <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
                   Cerrar

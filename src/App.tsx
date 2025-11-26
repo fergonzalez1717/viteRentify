@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate, useLocation } from "react-router-dom";
+import { Routes, Route, Link, useNavigate, useLocation,BrowserRouter } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Home from "./paginas/home";
 import Nosotros from "./paginas/nosotros";
@@ -9,6 +9,8 @@ import Registro from "./paginas/Registro";
 import Perfil from "./paginas/perfil";
 import Valoraciones from "./paginas/Valoraciones";
 import GestionPropiedades from "./paginas/GestionPropiedades";
+import { FormularioSolicitud } from './components/FormularioSolicitud';
+import { ListaSolicitudes } from './components/ListaSolicitudes';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -106,6 +108,8 @@ function App() {
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/arrienda" element={<Arrienda />} />
+          <Route path="/solicitudes" element={<ListaSolicitudes />} />
+         <Route path="/solicitudes/nueva" element={<FormularioSolicitud />}/>
 
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
           <Route path="/registro" element={<Registro onRegisterSuccess={() => setIsLoggedIn(true)} />} />
