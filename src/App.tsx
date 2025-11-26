@@ -54,6 +54,10 @@ function App() {
                 </li>
               ) : (
                 <>
+                  <li className="nav-item">
+      <Link className="nav-link" to="/perfil">Mi Perfil</Link>
+    </li>
+
                   {(userRole === "PROPIETARIO" || userRole === "ADMIN") && (
                     <li className="nav-item">
                       <Link className="nav-link" to="/gestion-propiedades">Mis Propiedades</Link>
