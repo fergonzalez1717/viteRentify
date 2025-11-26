@@ -20,7 +20,7 @@ export interface UsuarioDTO {
   puntos: number;
   rut: string;
   snombre?: string;
-  duocVip: number;
+  duocVip: boolean;
   codigoRef: string;
   clave: string;
   email: string;
@@ -50,7 +50,7 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   success: boolean;
-  message: string;
+  mensaje: string;
   usuario?: UsuarioDTO;
 }
 

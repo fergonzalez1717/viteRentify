@@ -1,26 +1,52 @@
 /**
- * User Service API
+ * User Service API - VERSIÓN CORREGIDA
  * Maneja autenticación y gestión de usuarios
+ * 
+ * CAMBIOS:
+ * - Mejor manejo de errores de red
+ * - Logs más descriptivos
+ * - Validación de respuestas del backend
  */
 
 import API_CONFIG from '../config/apiConfig';
-import type { UsuarioDTO, LoginRequest, LoginResponse,RolDTO,EstadoUsuarioDTO } from '../types';
+import type { UsuarioDTO, LoginRequest, LoginResponse, RolDTO, EstadoUsuarioDTO } from '../types';
 
 const BASE_URL = API_CONFIG.USER_SERVICE;
 
 /**
- * Manejo centralizado de errores
+ * Manejo centralizado de errores con logs detallados
  */
 const handleError = (error: any, operation: string): never => {
   console.error(`Error en ${operation}:`, error);
   
-  if (error.response) {
-    throw new Error(error.response.data?.message || `Error del servidor: ${error.response.status}`);
-  } else if (error.request) {
-    throw new Error('No se pudo conectar con el servidor. Verifica que el User Service esté corriendo en puerto 8081');
-  } else {
-    throw new Error(error.message || 'Error desconocido');
+  // Error de red (CORS, servidor caído, etc.)
+  if (error instanceof TypeError && error.message === 'Failed to fetch') {
+    throw new Error(
+      'No se pudo conectar con el servidor. ' +
+      'Verifica que:\n' +
+      '1. El User Service esté corriendo en http://localhost:8081\n' +
+      '2. CORS esté configurado en el backend\n' +
+      '3. No haya firewall bloqueando la conexión'
+    );
   }
+  
+  // Error HTTP (respuesta del servidor)
+  if (error.response) {
+    const status = error.response.status;
+    const message = error.response.data?.message || `Error ${status}`;
+    throw new Error(message);
+  }
+  
+  // Error de timeout o red
+  if (error.request) {
+    throw new Error(
+      'No hubo respuesta del servidor. ' +
+      'Verifica que el User Service (puerto 8081) esté corriendo.'
+    );
+  }
+  
+  // Otros errores
+  throw new Error(error.message || 'Error desconocido');
 };
 
 /**
@@ -29,12 +55,13 @@ const handleError = (error: any, operation: string): never => {
 export const userService = {
   /**
    * Login de usuario
-   * @param credentials - Email y contraseña
+   * @param credentials - Email y contraseña (campo 'clave')
    * @returns LoginResponse con información del usuario
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
-      console.log('🔐 Intentando login con:', credentials.email);
+      console.log('Intentando login con:', credentials.email);
+      console.log(' URL:', `${BASE_URL}/usuarios/login`);
       
       const response = await fetch(`${BASE_URL}/usuarios/login`, {
         method: 'POST',
@@ -42,17 +69,62 @@ export const userService = {
         body: JSON.stringify(credentials),
       });
 
+      console.log('📥 Respuesta HTTP:', response.status, response.statusText);
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Credenciales inválidas');
+        console.error('Error del servidor:', errorData);
+        
+        if (response.status === 401) {
+          throw new Error('Email o contraseña incorrectos');
+        }
+        
+        throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
       }
 
       const data: LoginResponse = await response.json();
-      console.log('Login exitoso:', data);
+      console.log('✅ Login exitoso:', {
+        email: data.usuario?.email,
+        rolId: data.usuario?.rolId,
+        estadoId: data.usuario?.estadoId
+      });
       
+      // El backend devuelve { mensaje: string, usuario: UsuarioDTO }
+      // Necesitamos convertirlo al formato esperado por el frontend
+      return {
+        success: true,
+        mensaje: data.mensaje || 'Login exitoso',
+        usuario: data.usuario
+      };
+    } catch (error: any) {
+      console.error('Error capturado en login:', error);
+      return handleError(error, 'login');
+    }
+  },
+
+  /**
+   * Registrar nuevo usuario
+   */
+  async registrar(usuario: Partial<UsuarioDTO>): Promise<UsuarioDTO> {
+    try {
+      console.log('Registrando nuevo usuario:', usuario.email);
+      
+      const response = await fetch(`${BASE_URL}/usuarios`, {
+        method: 'POST',
+        headers: API_CONFIG.HEADERS,
+        body: JSON.stringify(usuario),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Error al registrar usuario');
+      }
+
+      const data = await response.json();
+      console.log('Usuario registrado exitosamente:', data.id);
       return data;
     } catch (error: any) {
-      return handleError(error, 'login');
+      return handleError(error, 'registrarUsuario');
     }
   },
 
@@ -62,6 +134,8 @@ export const userService = {
   async obtenerPorId(id: number, includeDetails: boolean = false): Promise<UsuarioDTO> {
     try {
       const url = `${BASE_URL}/usuarios/${id}${includeDetails ? '?includeDetails=true' : ''}`;
+      console.log('Obteniendo usuario:', url);
+      
       const response = await fetch(url, {
         method: 'GET',
         headers: API_CONFIG.HEADERS,
@@ -71,7 +145,9 @@ export const userService = {
         throw new Error(`Error ${response.status}: Usuario no encontrado`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('Usuario obtenido:', data.email);
+      return data;
     } catch (error: any) {
       return handleError(error, `obtenerUsuarioPorId(${id})`);
     }
@@ -82,7 +158,7 @@ export const userService = {
    */
   async existe(id: number): Promise<boolean> {
     try {
-      const response = await fetch(`${BASE_URL}/usuarios/${id}/existe`, {
+      const response = await fetch(`${BASE_URL}/usuarios/${id}/exists`, {
         method: 'GET',
         headers: API_CONFIG.HEADERS,
       });
@@ -93,12 +169,32 @@ export const userService = {
 
       return await response.json();
     } catch (error: any) {
-      console.warn(`⚠️ Error verificando existencia de usuario ${id}:`, error);
+      console.warn(`Error verificando existencia de usuario ${id}:`, error);
       return false;
     }
   },
 
-  
+  /**
+   * Listar todos los usuarios
+   */
+  async listar(includeDetails: boolean = false): Promise<UsuarioDTO[]> {
+    try {
+      const url = `${BASE_URL}/usuarios${includeDetails ? '?includeDetails=true' : ''}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: API_CONFIG.HEADERS,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: No se pudieron obtener los usuarios`);
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      return handleError(error, 'listarUsuarios');
+    }
+  },
 };
 
 /**

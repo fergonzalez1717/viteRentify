@@ -1,89 +1,98 @@
 import React, { useState, useMemo } from "react";
+import useContacto from "../hooks/useContacto";
 
 // Tipado de la estructura de errores
 interface Errores {
   nombre: string;
-  apellidos: string;
   email: string;
+  asunto: string;
   mensaje: string;
+  telefono: string;
 }
 
 const Contacto: React.FC = () => {
-  // Estados para los campos
+  // Hook personalizado
+  const { crearMensaje, loading } = useContacto();
+
+  // Estados para los campos del formulario
   const [nombre, setNombre] = useState("");
-  const [apellidos, setApellidos] = useState("");
   const [email, setEmail] = useState("");
+  const [asunto, setAsunto] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [estadoEnvio, setEstadoEnvio] = useState("");
 
   // Estado para los mensajes de error de validación
   const [errores, setErrores] = useState<Errores>({
     nombre: "",
-    apellidos: "",
     email: "",
+    asunto: "",
     mensaje: "",
+    telefono: "",
   });
-  
-  // Estado para mensajes de confirmación o error general de envío
-  const [estadoEnvio, setEstadoEnvio] = useState("");
+
+  // Obtener usuarioId si está logueado (opcional)
+  const usuarioId = localStorage.getItem("userId");
+  const userEmail = localStorage.getItem("userEmail");
 
   // ---------------- LÓGICA DE VALIDACIÓN ----------------
-  
-  /**
-   * Valida todos los campos, incluyendo la restricción de solo letras.
-   * La validación se ejecuta de forma síncrona con los valores más recientes.
-   */
+
   const validarFormulario = (
     currentNombre: string,
-    currentApellidos: string,
     currentEmail: string,
-    currentMensaje: string
+    currentAsunto: string,
+    currentMensaje: string,
+    currentTelefono: string
   ): Errores => {
-    const nuevosErrores: Errores = { nombre: "", apellidos: "", email: "", mensaje: "" };
+    const nuevosErrores: Errores = {
+      nombre: "",
+      email: "",
+      asunto: "",
+      mensaje: "",
+      telefono: "",
+    };
 
-    // Regex para validar solo letras (incluyendo acentos, ñ/Ñ y espacios)
     const soloLetrasRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/;
-    
-    // --- Validación de Nombre ---
+
     if (!currentNombre.trim()) {
-      nuevosErrores.nombre = "El nombre no puede estar vacío.";
+      nuevosErrores.nombre = "El nombre es obligatorio";
+    } else if (currentNombre.length < 2) {
+      nuevosErrores.nombre = "El nombre debe tener al menos 2 caracteres";
+    } else if (currentNombre.length > 100) {
+      nuevosErrores.nombre = "El nombre no puede exceder 100 caracteres";
     } else if (!soloLetrasRegex.test(currentNombre)) {
-      nuevosErrores.nombre = "⚠️ Ingrese solo letras y espacios.";
+      nuevosErrores.nombre = "⚠️ Ingrese solo letras y espacios";
     }
 
-    // --- Validación de Apellidos ---
-    if (!currentApellidos.trim()) {
-      nuevosErrores.apellidos = "Los apellidos no pueden estar vacíos.";
-    } else if (!soloLetrasRegex.test(currentApellidos)) {
-      nuevosErrores.apellidos = "⚠️ Ingrese solo letras y espacios.";
-    }
-
-    // --- Validación de Email ---
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!currentEmail.trim()) {
-      nuevosErrores.email = "El email es obligatorio.";
+      nuevosErrores.email = "El email es obligatorio";
     } else if (!emailRegex.test(currentEmail)) {
-      nuevosErrores.email = "Formato de email no válido.";
+      nuevosErrores.email = "Formato de email no válido";
     }
 
-    // --- Validación de Mensaje ---
+    if (!currentAsunto.trim()) {
+      nuevosErrores.asunto = "El asunto es obligatorio";
+    } else if (currentAsunto.length > 200) {
+      nuevosErrores.asunto = "El asunto no puede exceder 200 caracteres";
+    }
+
     if (!currentMensaje.trim()) {
-      nuevosErrores.mensaje = "El mensaje no puede estar vacío.";
+      nuevosErrores.mensaje = "El mensaje es obligatorio";
     } else if (currentMensaje.length < 10) {
-      nuevosErrores.mensaje = "El mensaje debe tener al menos 10 caracteres.";
-    } else if (currentMensaje.length > 200) {
-      nuevosErrores.mensaje = "El mensaje no puede superar los 200 caracteres.";
+      nuevosErrores.mensaje = "El mensaje debe tener al menos 10 caracteres";
+    } else if (currentMensaje.length > 5000) {
+      nuevosErrores.mensaje = "El mensaje no puede exceder 5000 caracteres";
+    }
+
+    if (currentTelefono.trim() && currentTelefono.length > 20) {
+      nuevosErrores.telefono = "El teléfono no puede exceder 20 caracteres";
     }
 
     setErrores(nuevosErrores);
     return nuevosErrores;
   };
 
-  // ---------------- MANEJADOR DE CAMBIOS EN TIEMPO REAL ----------------
-  
-  /**
-   * Función central que actualiza el estado del campo y ejecuta la validación inmediatamente
-   * para reflejar los errores y el estado del botón en tiempo real.
-   */
   const handleInputChange = (
     setter: React.Dispatch<React.SetStateAction<string>>,
     value: string,
@@ -91,156 +100,221 @@ const Contacto: React.FC = () => {
   ) => {
     setter(value);
 
-    // Obtener el estado actualizado para la validación síncrona
-    const currentFormState = { nombre, apellidos, email, mensaje };
+    const currentFormState = { nombre, email, asunto, mensaje, telefono };
     const updatedState = { ...currentFormState, [campo]: value };
-    
-    // Llamar a validarFormulario con el nuevo estado para actualizar los errores
+
     validarFormulario(
       updatedState.nombre,
-      updatedState.apellidos,
       updatedState.email,
-      updatedState.mensaje
+      updatedState.asunto,
+      updatedState.mensaje,
+      updatedState.telefono
     );
   };
 
-  // 🔹 Manejo del envío
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Ejecutar la validación final antes de intentar el envío
-    const erroresValidacion = validarFormulario(nombre, apellidos, email, mensaje);
+    const erroresValidacion = validarFormulario(nombre, email, asunto, mensaje, telefono);
+    const hayErrores = Object.values(erroresValidacion).some((error) => error !== "");
 
-    const hayErrores = Object.values(erroresValidacion).some(error => error !== "");
+    if (hayErrores) {
+      setEstadoEnvio("❌ Por favor corrige los errores antes de enviar el formulario");
+      return;
+    }
 
-    if (!hayErrores) {
-      // Éxito: Simulación de envío
-      setEstadoEnvio(`✅ ¡Gracias ${nombre} ${apellidos}! Tu mensaje ha sido enviado correctamente.`);
-      
-      // Limpiar formulario
-      setNombre("");
-      setApellidos("");
-      setEmail("");
-      setMensaje("");
-      setErrores({ nombre: "", apellidos: "", email: "", mensaje: "" });
-    } else {
-      // Error: Notificar al usuario (los errores de campo ya están visibles)
-      setEstadoEnvio("❌ Por favor corrige los errores antes de enviar el formulario.");
+    const mensajeData = {
+      nombre: nombre.trim(),
+      email: email.trim(),
+      asunto: asunto.trim(),
+      mensaje: mensaje.trim(),
+      numeroTelefono: telefono.trim() || undefined,
+      usuarioId: usuarioId ? parseInt(usuarioId) : undefined,
+    };
+
+    try {
+      setEstadoEnvio("");
+
+      console.log("📧 Enviando mensaje de contacto...", mensajeData);
+
+      // Usar el hook
+      const result = await crearMensaje(mensajeData);
+
+      if (result.success) {
+        console.log("✅ Mensaje enviado:", result.data);
+        setEstadoEnvio(`✅ ¡Gracias ${nombre}! Tu mensaje ha sido enviado correctamente. Te responderemos pronto.`);
+
+        // Limpiar formulario
+        setNombre("");
+        setEmail("");
+        setAsunto("");
+        setMensaje("");
+        setTelefono("");
+        setErrores({ nombre: "", email: "", asunto: "", mensaje: "", telefono: "" });
+      } else {
+        console.error("❌ Error:", result.error);
+        
+        if (result.error?.includes("límite")) {
+          setEstadoEnvio(
+            "⚠️ Has alcanzado el límite de mensajes pendientes. Por favor espera respuesta a tus mensajes anteriores."
+          );
+        } else if (result.error?.includes("conectar")) {
+          setEstadoEnvio(
+            "❌ No se pudo conectar con el servidor. Verifica que el Contact Service esté corriendo en puerto 8085."
+          );
+        } else {
+          setEstadoEnvio(`❌ Error al enviar el mensaje: ${result.error}`);
+        }
+      }
+    } catch (error: any) {
+      console.error("❌ Error inesperado:", error);
+      setEstadoEnvio(`❌ Error inesperado: ${error.message}`);
     }
   };
 
-  // ---------------- LÓGICA DEL BOTÓN DESHABILITADO ----------------
-  /**
-   * useMemo asegura que el estado de 'disabled' solo se recalcule cuando cambien los valores de los campos o los errores.
-   */
   const botonDeshabilitado = useMemo(() => {
-    const camposLlenos = nombre.trim() && apellidos.trim() && email.trim() && mensaje.trim();
-    // Verifica si hay ALGÚN mensaje de error activo
-    const hayErrores = !!errores.nombre || !!errores.apellidos || !!errores.email || !!errores.mensaje;
+    const camposObligatoriosLlenos =
+      nombre.trim() && email.trim() && asunto.trim() && mensaje.trim();
+    const hayErrores =
+      !!errores.nombre ||
+      !!errores.email ||
+      !!errores.asunto ||
+      !!errores.mensaje ||
+      !!errores.telefono;
 
-    // El botón se deshabilita si falta llenar campos O si hay errores de validación.
-    return !camposLlenos || hayErrores;
-  }, [nombre, apellidos, email, mensaje, errores]); 
+    return !camposObligatoriosLlenos || hayErrores || loading;
+  }, [nombre, email, asunto, mensaje, telefono, errores, loading]);
 
-  // ---------------- INTERFAZ (Usando Clases de app.css) ----------------
   return (
-    // CLASE PRINCIPAL: targeteada por tu CSS (.contact-form-container)
-    <div className="contact-form-container"> 
-      {/* Las clases de título y lead son targeteadas por tu CSS */}
+    <div className="contact-form-container">
       <h1 className="fw-bold display-5 mb-3">Contacto 📨</h1>
       <p className="lead mb-4">
         Completa el formulario y nos pondremos en contacto contigo.
       </p>
 
-      {/* Tu CSS usa selectores como .contact-form-container .form-control, por eso usamos las clases originales */}
+      {userEmail && !email && (
+        <div className="alert alert-info mb-3">
+          <small>
+            💡 Detectamos que estás logueado como <strong>{userEmail}</strong>
+          </small>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="w-100" style={{ maxWidth: "500px" }}>
-        
-        {/* Campo Nombre */}
         <div className="mb-3">
-          <label htmlFor="nombre" className="form-label">Nombre</label>
+          <label htmlFor="nombre" className="form-label">
+            Nombre <span className="text-danger">*</span>
+          </label>
           <input
             type="text"
             id="nombre"
-            className="form-control" // Clase targeteada por tu CSS
+            className="form-control"
             value={nombre}
-            onChange={(e) => handleInputChange(setNombre, e.target.value, 'nombre')}
-            // Tu CSS maneja el estilo de :focus y .form-control
+            onChange={(e) => handleInputChange(setNombre, e.target.value, "nombre")}
+            placeholder="Juan Pérez"
+            disabled={loading}
           />
-          {/* Clase targeteada por tu CSS (.contact-form-container .text-danger) */}
           {errores.nombre && <p className="text-danger mt-1">{errores.nombre}</p>}
         </div>
 
-        {/* Campo Apellidos */}
         <div className="mb-3">
-          <label htmlFor="apellidos" className="form-label">Apellidos</label>
-          <input
-            type="text"
-            id="apellidos"
-            className="form-control" // Clase targeteada por tu CSS
-            value={apellidos}
-            onChange={(e) => handleInputChange(setApellidos, e.target.value, 'apellidos')}
-          />
-          {/* Clase targeteada por tu CSS (.contact-form-container .text-danger) */}
-          {errores.apellidos && <p className="text-danger mt-1">{errores.apellidos}</p>}
-        </div>
-
-        {/* Campo Email */}
-        <div className="mb-3">
-          <label htmlFor="email" className="form-label">Email</label>
+          <label htmlFor="email" className="form-label">
+            Email <span className="text-danger">*</span>
+          </label>
           <input
             type="email"
             id="email"
-            className="form-control" // Clase targeteada por tu CSS
-            value={email}
-            onChange={(e) => handleInputChange(setEmail, e.target.value, 'email')}
+            className="form-control"
+            value={email || userEmail || ""}
+            onChange={(e) => handleInputChange(setEmail, e.target.value, "email")}
+            placeholder="tu@email.com"
+            disabled={loading}
           />
-          {/* Clase targeteada por tu CSS (.contact-form-container .text-danger) */}
           {errores.email && <p className="text-danger mt-1">{errores.email}</p>}
         </div>
 
-        {/* Campo Mensaje */}
         <div className="mb-3">
-          <label htmlFor="mensaje" className="form-label">Mensaje</label>
-          <textarea
-            id="mensaje"
-            className="form-control" // Clase targeteada por tu CSS
-            value={mensaje}
-            onChange={(e) => handleInputChange(setMensaje, e.target.value, 'mensaje')}
-            rows={4}
-          ></textarea>
-          {/* Clase targeteada por tu CSS (.contact-form-container .text-danger) */}
-          {errores.mensaje && <p className="text-danger mt-1">{errores.mensaje}</p>}
+          <label htmlFor="telefono" className="form-label">
+            Teléfono <small className="text-muted">(opcional)</small>
+          </label>
+          <input
+            type="tel"
+            id="telefono"
+            className="form-control"
+            value={telefono}
+            onChange={(e) => handleInputChange(setTelefono, e.target.value, "telefono")}
+            placeholder="+56912345678"
+            disabled={loading}
+          />
+          {errores.telefono && <p className="text-danger mt-1">{errores.telefono}</p>}
         </div>
 
-        {/* Botón de envío */}
-        <button 
-          type="submit" 
-          className="btn w-100" // Clase targeteada por tu CSS
-          disabled={botonDeshabilitado}
-        >
-          Enviar
+        <div className="mb-3">
+          <label htmlFor="asunto" className="form-label">
+            Asunto <span className="text-danger">*</span>
+          </label>
+          <input
+            type="text"
+            id="asunto"
+            className="form-control"
+            value={asunto}
+            onChange={(e) => handleInputChange(setAsunto, e.target.value, "asunto")}
+            placeholder="Consulta sobre arriendo"
+            disabled={loading}
+          />
+          {errores.asunto && <p className="text-danger mt-1">{errores.asunto}</p>}
+          <small className="text-muted">{asunto.length}/200 caracteres</small>
+        </div>
+
+        <div className="mb-3">
+          <label htmlFor="mensaje" className="form-label">
+            Mensaje <span className="text-danger">*</span>
+          </label>
+          <textarea
+            id="mensaje"
+            className="form-control"
+            value={mensaje}
+            onChange={(e) => handleInputChange(setMensaje, e.target.value, "mensaje")}
+            rows={6}
+            placeholder="Escribe tu mensaje aquí... (mínimo 10 caracteres)"
+            disabled={loading}
+          ></textarea>
+          {errores.mensaje && <p className="text-danger mt-1">{errores.mensaje}</p>}
+          <small className="text-muted">{mensaje.length}/5000 caracteres</small>
+        </div>
+
+        <button type="submit" className="btn w-100" disabled={botonDeshabilitado}>
+          {loading ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm me-2"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              Enviando...
+            </>
+          ) : (
+            "Enviar Mensaje"
+          )}
         </button>
       </form>
 
-      {/* Mensaje de estado de envío (Éxito o Error) */}
       {estadoEnvio && (
-        <div 
-          // Estilos inline para el mensaje de estado, usando colores que complementan tu tema verde
-          style={{ 
-            marginTop: '1rem', 
-            padding: '10px', 
-            borderRadius: '6px', 
-            textAlign: 'center', 
-            fontWeight: '600',
-            backgroundColor: estadoEnvio.startsWith('✅') ? '#a5d6a7' : '#ffcdd2', // Verde claro / Rosa pálido
-            color: estadoEnvio.startsWith('✅') ? '#064420' : '#d32f2f', // Verde oscuro / Rojo oscuro
-            border: `1px solid ${estadoEnvio.startsWith('✅') ? '#2e6b3a' : '#ef9a9a'}` // Bordes
+        <div
+          style={{
+            marginTop: "1rem",
+            padding: "10px",
+            borderRadius: "6px",
+            textAlign: "center",
+            fontWeight: "600",
+            backgroundColor: estadoEnvio.startsWith("✅") ? "#a5d6a7" : "#ffcdd2",
+            color: estadoEnvio.startsWith("✅") ? "#064420" : "#d32f2f",
+            border: `1px solid ${estadoEnvio.startsWith("✅") ? "#2e6b3a" : "#ef9a9a"}`,
           }}
         >
           {estadoEnvio}
         </div>
       )}
-      
     </div>
   );
 };

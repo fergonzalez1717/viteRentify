@@ -19,21 +19,54 @@ const Login: React.FC = () => {
       return;
     }
 
+    // Validación local de longitud de contraseña
+    if (password.length < 8) {
+      setErrorMessage("La contraseña debe tener al menos 8 caracteres");
+      return;
+    }
+
     try {
       console.log("Intentando login con:", email);
       
       const response = await login({ email, clave: password });
 
+      // Verificar si la respuesta es válida
+      if (!response) {
+        setErrorMessage("Error: No se recibió respuesta del servidor");
+        return;
+      }
+
       if (response.success) {
         console.log("Login exitoso, redirigiendo...");
         navigate("/");
         window.location.reload(); // Forzar recarga para actualizar navbar
+      } else if (response.mensaje) {
+        setErrorMessage(response.mensaje);
       } else {
-        setErrorMessage(response.message || "Credenciales inválidas");
+        setErrorMessage("Credenciales inválidas");
       }
     } catch (err: any) {
       console.error("Error en login:", err);
-      setErrorMessage(err.message || "Error al conectar con el servidor");
+      
+      // Extraer mensaje de error más específico
+      let errorMsg = "Error al conectar con el servidor";
+      
+      if (err.message) {
+        // Si el mensaje contiene información sobre validación
+        if (err.message.includes("8 caracteres")) {
+          errorMsg = "La contraseña debe tener al menos 8 caracteres";
+        } else if (err.message.includes("Failed to fetch")) {
+          errorMsg = "No se pudo conectar con el servidor. Verifica que el backend esté corriendo en puerto 8081";
+        } else if (err.message.includes("incorrectos") || err.message.includes("inválidas")) {
+          errorMsg = "Email o contraseña incorrectos";
+        } else {
+          errorMsg = err.message;
+        }
+      } else if (typeof err === 'string') {
+        errorMsg = err;
+      }
+      
+      setErrorMessage(errorMsg);
     }
   };
 
@@ -63,7 +96,7 @@ const Login: React.FC = () => {
               className="form-control"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="aaa@gmail.com"
+              placeholder="usuario@ejemplo.com"
               required
               disabled={loading}
             />
@@ -77,10 +110,12 @@ const Login: React.FC = () => {
               className="form-control"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="miau"
+              placeholder="Mínimo 8 caracteres"
               required
               disabled={loading}
+              minLength={8}
             />
+            <small className="text-muted">La contraseña debe tener al menos 8 caracteres</small>
           </div>
 
           <button 
@@ -102,13 +137,10 @@ const Login: React.FC = () => {
         <div className="mt-3 p-3 bg-info bg-opacity-10 border border-info rounded">
           <small className="text-muted d-block mb-2"><strong>Usuarios de prueba:</strong></small>
           <small className="d-block">
-            • <strong>Admin:</strong> da.olaver@duocuc.cl / 1234
+            • <strong>Usuario válido:</strong> juan.perez@email.com / password123
           </small>
-          <small className="d-block">
-            • <strong>Propietario:</strong> fs.gonzalez@duocuc.cl / 1234
-          </small>
-          <small className="d-block">
-            • <strong>Arriendatario:</strong> juan.perez@gmail.com / password123
+          <small className="d-block text-danger mt-2">
+            ⚠️ Nota: Las contraseñas deben tener mínimo 8 caracteres
           </small>
         </div>
 
