@@ -1,5 +1,9 @@
-// Exportar hooks de solicitudes
-export { useSolicitudes, useSolicitud } from './useSolicitudes';
+/**
+ * Custom Hooks Index
+ * Exporta todos los hooks personalizados
+ */
 
-// Exportar hooks de registros
-export { useRegistros, useRegistro } from './useRegistros';
+export { useUsuarios } from './useUsuarios';
+export { usePropiedades } from './usePropiedades';
+export { useDocumentos } from './useDocumentos';
+export { useSolicitudes } from './useSolicitudes';
