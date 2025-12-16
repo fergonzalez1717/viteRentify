@@ -1,357 +1,566 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+
+import { useUsuarios } from "../hooks/useUsuarios"; 
+
+
+import { propiedadService, comunaService, tipoService } from "../api"; 
+import { ROLES } from "../config/apiConfig"; 
+import type { PropiedadDTO, CrearPropiedadRequest, ComunaDTO, TipoPropiedadDTO } from "../types";
+
+
 interface Propiedad {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  imagen: string;
-  precio: number;
-  direccion: string;
-  propietarioEmail: string;
+  id: number;
+  codigo: string;
+  titulo: string;          
+  descripcion: string;
+  direccion: string;
+  precioMensual: number;   
+  divisa: 'CLP' | 'USD' | 'EUR'; 
+  m2: number; 
+  nHabit: number;
+  nBanos: number;
+  petFriendly: boolean;
+  tipoId: number;
+  comunaId: number;
+  propietarioId: number; 
+  propietarioEmail: string;
+  imagen: string; 
 }
 
 const GestionPropiedades: React.FC = () => {
-  const navigate = useNavigate();
-  const userEmail = localStorage.getItem("userEmail") || "";
-  const userRole = localStorage.getItem("userRole") || "";
+  const navigate = useNavigate();
+  
+  // Lectura del usuario y rol desde localStorage
+  const userRole = localStorage.getItem("userRole") || "";
+  const userId = localStorage.getItem("userId");
+  const userEmail = localStorage.getItem("userEmail") || "";
 
-  // Propiedades de ejemplo (en producción vendrían del backend)
-  const [propiedades, setPropiedades] = useState<Propiedad[]>([
-    {
-      id: 1,
-      nombre: "Depto Santiago centro",
-      descripcion: "Departamento céntrico de 2 dormitorios",
-      imagen: "https://www.toppropiedades.cl/imagenes/c1981u6668coc1ea47.jpg",
-      precio: 550000,
-      direccion: "Santa Isabel 385, Santiago Centro",
-      propietarioEmail: "fs.gonzalez@duocuc.cl"
-    },
-    {
-      id: 2,
-      nombre: "Casa en Maipú",
-      descripcion: "Casa con patio y jardín amplio, ideal para familias",
-      imagen: "https://www.luisduranpropiedades.cl/wp-content/uploads/2022/12/20200729_145338-scaled.jpg",
-      precio: 630000,
-      direccion: "Leonel Calcagni 389, Maipú",
-      propietarioEmail: "fs.gonzalez@duocuc.cl"
-    },
-    {
-      id: 3,
-      nombre: "Depto Providencia",
-      descripcion: "Moderno departamento en el corazón de Providencia",
-      imagen: "https://http2.mlstatic.com/D_NQ_NP_861463-MLC92409060203_092025-O-moderno-dpto-vitacura-101711.webp",
-      precio: 750000,
-      direccion: "Av. Providencia 1234, Providencia",
-      propietarioEmail: "otro.propietario@duocuc.cl"
-    }
-  ]);
+  // Estados
+  const [propiedades, setPropiedades] = useState<Propiedad[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [showModal, setShowModal] = useState(false);
-  const [modoEdicion, setModoEdicion] = useState(false);
-  const [propiedadActual, setPropiedadActual] = useState<Propiedad>({
-    id: 0,
-    nombre: "",
-    descripcion: "",
-    imagen: "",
-    precio: 0,
-    direccion: "",
-    propietarioEmail: userEmail
-  });
+  const [showModal, setShowModal] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(false);
 
-  useEffect(() => {
-    if (userRole !== "PROPIETARIO" && userRole !== "ADMIN") {
-      alert("No tienes permisos para acceder a esta sección");
-      navigate("/");
-    }
-  }, [userRole, navigate]);
+  // ESTADO INICIAL COMPLETO (NECESARIO PARA EL DTO)
+  const INITIAL_PROPIEDAD_STATE: Propiedad = {
+    id: 0,
+    codigo: "",
+    titulo: "",
+    descripcion: "",
+    direccion: "",
+    precioMensual: 0,
+    divisa: 'CLP',
+    m2: 0, // Inicializado en 0 para forzar selección/ingreso
+    nHabit: 0,
+    nBanos: 0,
+    petFriendly: false,
+    tipoId: 0, // Inicializado en 0 para forzar selección
+    comunaId: 0, // Inicializado en 0 para forzar selección
+    propietarioId: userId ? Number(userId) : 0, 
+    propietarioEmail: userEmail,
+    imagen: "",
+  };
 
-  // ADMIN ve todas las propiedades, PROPIETARIO solo las suyas
-  const propiedadesFiltradas = userRole === "ADMIN" 
-    ? propiedades 
-    : propiedades.filter(p => p.propietarioEmail === userEmail);
+  const [propiedadActual, setPropiedadActual] = useState<Propiedad>(INITIAL_PROPIEDAD_STATE);
+  const [comunas, setComunas] = useState<ComunaDTO[]>([]);
+  const [tipos, setTipos] = useState<TipoPropiedadDTO[]>([]);
 
-  const handleAgregarPropiedad = () => {
-    setModoEdicion(false);
-    setPropiedadActual({
-      id: 0,
-      nombre: "",
-      descripcion: "",
-      imagen: "",
-      precio: 0,
-      direccion: "",
-      propietarioEmail: userEmail
-    });
-    setShowModal(true);
-  };
+  // ----------------------------------------------------------------------
+  // FUNCIÓN CRÍTICA: CARGA DE DATOS DESDE EL BACKEND
+  // ----------------------------------------------------------------------
+const fetchPropiedades = async () => {
+    if (!userId || (!userRole)) {
+        setIsLoading(false);
+        return;
+    }
 
-  const handleEditarPropiedad = (propiedad: Propiedad) => {
-    if (userRole !== "ADMIN" && propiedad.propietarioEmail !== userEmail) {
-      alert("No tienes permisos para editar esta propiedad");
-      return;
-    }
-    setModoEdicion(true);
-    setPropiedadActual(propiedad);
-    setShowModal(true);
-  };
+    setIsLoading(true);
+    setError(null);
 
-  const handleEliminarPropiedad = (id: number) => {
-    const propiedad = propiedades.find(p => p.id === id);
-    
-    if (userRole !== "ADMIN" && propiedad?.propietarioEmail !== userEmail) {
-      alert("No tienes permisos para eliminar esta propiedad");
-      return;
-    }
+    try {
+        let fetchedData: PropiedadDTO[] = [];
 
-    if (window.confirm("¿Estás seguro de eliminar esta propiedad?")) {
-      setPropiedades(propiedades.filter(p => p.id !== id));
-      alert("Propiedad eliminada exitosamente");
-    }
-  };
+        if (userRole === ROLES.ADMIN) {
+            fetchedData = await propiedadService.listar(true); 
+        } else if (userRole === ROLES.PROPIETARIO) {
+            fetchedData = await propiedadService.listarPorPropietario(Number(userId), true);
+        }
 
-  const handleGuardarPropiedad = (e: React.FormEvent) => {
-    e.preventDefault();
+        const propiedadesConImagen: Propiedad[] = fetchedData.map(dto => ({
+            ...dto,
+            imagen: dto.fotos && dto.fotos.length > 0 
+                    ? dto.fotos[0].url 
+                    : 'https://via.placeholder.com/300x200?text=Sin+Imagen', // Placeholder visible para la prueba
+            
+            // Mapeamos los campos que cambiaron de nombre:
+            titulo: dto.titulo,
+            precioMensual: dto.precioMensual,
+        })) as Propiedad[]; 
 
-    if (!propiedadActual.nombre || !propiedadActual.direccion || propiedadActual.precio <= 0) {
-      alert("Por favor completa todos los campos obligatorios");
-      return;
-    }
 
-    if (modoEdicion) {
-      setPropiedades(propiedades.map(p => 
-        p.id === propiedadActual.id ? propiedadActual : p
-      ));
-      alert("Propiedad actualizada exitosamente");
-    } else {
-      const nuevaPropiedad = {
-        ...propiedadActual,
-        id: Math.max(...propiedades.map(p => p.id), 0) + 1,
-        propietarioEmail: userEmail
-      };
-      setPropiedades([...propiedades, nuevaPropiedad]);
-      alert("Propiedad agregada exitosamente");
-    }
+        setPropiedades(propiedadesConImagen); 
+        
+    } catch (err: any) {
+        console.error("Error al cargar propiedades del backend:", err);
+        setError("Error al cargar propiedades. Verifica que el Property Service (8082) esté activo.");
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
-    setShowModal(false);
-  };
+  /**
+   * Carga las listas de Comunas y Tipos al iniciar la aplicación.
+   */
+  const fetchListasMaestras = async () => {
+    try {
+        const [comunasData, tiposData] = await Promise.all([
+            comunaService.listar(),
+            tipoService.listar()
+        ]);
+        setComunas(comunasData);
+        setTipos(tiposData);
+    } catch (err) {
+        console.error("Error al cargar listas de Comunas/Tipos:", err);
+    }
+  };
 
-  const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPropiedadActual({
-          ...propiedadActual,
-          imagen: reader.result as string
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
-  return (
-    <div className="container my-5">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="fw-bold">
-          {userRole === "ADMIN" ? "Gestión de Propiedades (Administrador)" : "Mis Propiedades"}
-        </h1>
-        {/* El botón de agregar SOLO se muestra para PROPIETARIO */}
-        {userRole === "PROPIETARIO" && (
-          <button className="btn btn-success" onClick={handleAgregarPropiedad}>
-            Agregar Propiedad
-          </button>
-        )}
-      </div>
+  // ----------------------------------------------------------------------
+  // EFECTO DE MONTAJE Y REDIRECCIÓN (ACTUALIZADO)
+  // ----------------------------------------------------------------------
+  useEffect(() => {
+    if (userRole && userRole !== ROLES.PROPIETARIO && userRole !== ROLES.ADMIN) {
+      navigate("/");
+      return;
+    }
+    
+    // 1. Cargar datos maestros (Comunas y Tipos)
+    fetchListasMaestras();
+    
+    // 2. Cargar propiedades del usuario/admin
+    if (userId && (userRole === ROLES.PROPIETARIO || userRole === ROLES.ADMIN)) {
+      fetchPropiedades();
+    }
+  }, [userRole, userId, navigate]); 
+  
+  
+  // ----------------------------------------------------------------------
+  // LÓGICA CRUD
+  // ----------------------------------------------------------------------
+  
+  const handleAgregarPropiedad = () => {
+    setModoEdicion(false);
+    // Reinicia el estado con valores por defecto y código único
+    setPropiedadActual({
+      ...INITIAL_PROPIEDAD_STATE,
+      codigo: 'AUTO-' + Date.now(), 
+      propietarioId: userId ? Number(userId) : 0, 
+      propietarioEmail: userEmail,
+      tipoId: tipos.length > 0 ? tipos[0].id : 0, // Setea el primer tipo disponible si existe
+      comunaId: comunas.length > 0 ? comunas[0].id : 0, // Setea la primera comuna disponible si existe
+    });
+    setShowModal(true);
+  };
 
-      {/* Mensaje informativo para ADMIN */}
-      {userRole === "ADMIN" && (
-        <div className="alert alert-info">
-          <strong>Modo Administrador:</strong> Puedes ver y gestionar todas las propiedades del sistema.
-        </div>
-      )}
+  const handleEditarPropiedad = (propiedad: Propiedad) => {
+    if (userRole !== ROLES.ADMIN && propiedad.propietarioEmail !== userEmail) {
+      alert("No tienes permisos para editar esta propiedad");
+      return;
+    }
+    setModoEdicion(true);
+    setPropiedadActual(propiedad);
+    setShowModal(true);
+  };
 
-      {propiedadesFiltradas.length === 0 ? (
-        <div className="alert alert-warning text-center">
-          {userRole === "ADMIN" 
-            ? "No hay propiedades en el sistema." 
-            : "No tienes propiedades publicadas. ¡Agrega tu primera propiedad!"}
-        </div>
-      ) : (
-        <div className="row g-4">
-          {propiedadesFiltradas.map((propiedad) => (
-            <div className="col-md-6 col-lg-4" key={propiedad.id}>
-              <div className="card shadow-sm h-100">
-                <img 
-                  src={propiedad.imagen} 
-                  className="card-img-top" 
-                  alt={propiedad.nombre}
-                  style={{ height: "200px", objectFit: "cover" }}
-                />
-                <div className="card-body d-flex flex-column">
-                  <h5 className="card-title">{propiedad.nombre}</h5>
-                  <p className="card-text text-muted small">{propiedad.descripcion}</p>
-                  <p className="fw-bold text-success">
-                    ${propiedad.precio.toLocaleString('es-CL')}
-                  </p>
-                  <p className="text-muted small">{propiedad.direccion}</p>
-                  
-                  {/* ADMIN siempre ve el propietario */}
-                  {userRole === "ADMIN" && (
-                    <p className="text-muted small">
-                      <strong>Propietario:</strong> {propiedad.propietarioEmail}
-                    </p>
-                  )}
+  const handleEliminarPropiedad = async (id: number) => {
+    const propiedad = propiedades.find(p => p.id === id);
+    
+    if (userRole !== ROLES.ADMIN && propiedad?.propietarioEmail !== userEmail) {
+      alert("No tienes permisos para eliminar esta propiedad");
+      return;
+    }
 
-                  <div className="mt-auto d-flex gap-2">
-                    {/* ADMIN puede editar cualquier propiedad */}
-                    {userRole === "ADMIN" && (
-                      <button 
-                        className="btn btn-warning btn-sm flex-fill"
-                        onClick={() => handleEditarPropiedad(propiedad)}
-                      >
-                        Editar
-                      </button>
-                    )}
-                    
-                    {/* PROPIETARIO solo puede editar sus propias propiedades */}
-                    {userRole === "PROPIETARIO" && propiedad.propietarioEmail === userEmail && (
-                      <button 
-                        className="btn btn-primary btn-sm flex-fill"
-                        onClick={() => handleEditarPropiedad(propiedad)}
-                      >
-                        Editar
-                      </button>
-                    )}
-                    
-                    {/* Ambos pueden eliminar (con sus respectivas validaciones) */}
-                    <button 
-                      className="btn btn-danger btn-sm flex-fill"
-                      onClick={() => handleEliminarPropiedad(propiedad.id)}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+    if (window.confirm("¿Estás seguro de eliminar esta propiedad?")) {
+      try {
+        await propiedadService.eliminar(id); 
+        alert("Propiedad eliminada exitosamente");
+        fetchPropiedades(); 
+      } catch (err: any) {
+        alert("Error al eliminar la propiedad en el servidor: " + (err.message || "Error desconocido"));
+        console.error("Error al eliminar:", err);
+      }
+    }
+  };
+  
+  const handleGuardarPropiedad = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-      {/* Modal de agregar/editar - Solo para PROPIETARIO o ADMIN editando */}
-      {showModal && (
-        <div
-          className="modal d-block"
-          tabIndex={-1}
-          style={{ backgroundColor: "rgba(0,0,0,0.6)", position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1050 }}
-        >
-          <div className="modal-dialog modal-dialog-centered modal-lg">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {modoEdicion ? "Editar Propiedad" : "Agregar Nueva Propiedad"}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowModal(false)}
-                ></button>
-              </div>
-              <form onSubmit={handleGuardarPropiedad}>
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Nombre de la Propiedad *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={propiedadActual.nombre}
-                      onChange={(e) => setPropiedadActual({
-                        ...propiedadActual,
-                        nombre: e.target.value
-                      })}
-                      required
-                    />
-                  </div>
+    // Validaciones de campos de texto/precio
+    if (!propiedadActual.titulo || !propiedadActual.direccion || propiedadActual.precioMensual <= 0) {
+      alert("Por favor completa los campos obligatorios (Título, Dirección, Precio).");
+      return;
+    }
+    
+    // Validaciones de campos de selección/numéricos
+    if (propiedadActual.comunaId <= 0 || propiedadActual.tipoId <= 0) {
+      alert("Por favor, selecciona una Comuna y un Tipo de Propiedad válidos.");
+      return;
+    }
+    
+    if (propiedadActual.m2 <= 0 || propiedadActual.nHabit < 0 || propiedadActual.nBanos < 0) {
+      alert("Verifica que los metros cuadrados (m2) sea mayor a cero, y el número de habitaciones y baños sean válidos.");
+      return;
+    }
+   
+    // CONSTRUCCIÓN DEL DTO COMPLETO: Usando valores del estado, sin valores mock.
+    const dataToSend: CrearPropiedadRequest & { propietarioId: number } = {
 
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Descripción</label>
-                    <textarea
-                      className="form-control"
-                      rows={3}
-                      value={propiedadActual.descripcion}
-                      onChange={(e) => setPropiedadActual({
-                        ...propiedadActual,
-                        descripcion: e.target.value
-                      })}
-                    />
-                  </div>
+        codigo: propiedadActual.codigo || 'WEB-' + Date.now(),
+        titulo: propiedadActual.titulo,
+        descripcion: propiedadActual.descripcion || '',
+        direccion: propiedadActual.direccion,
+        precioMensual: propiedadActual.precioMensual,
+        
+        // CAMPOS OBLIGATORIOS OBTENIDOS DEL ESTADO ACTUAL (DESDE EL FORMULARIO) 
+        divisa: propiedadActual.divisa,
+        m2: propiedadActual.m2,          
+        nHabit: propiedadActual.nHabit,   
+        nBanos: propiedadActual.nBanos,   
+        petFriendly: propiedadActual.petFriendly,
+        tipoId: propiedadActual.tipoId,    
+        comunaId: propiedadActual.comunaId,  
+        
+        // Campo extra para el Backend
+        propietarioId: Number(userId), 
+    };
 
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Dirección *</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={propiedadActual.direccion}
-                      onChange={(e) => setPropiedadActual({
-                        ...propiedadActual,
-                        direccion: e.target.value
-                      })}
-                      required
-                    />
-                  </div>
+    try {
+      let message: string;
+      if (modoEdicion) {
+        await propiedadService.actualizar(propiedadActual.id, dataToSend);
+        message = "Propiedad actualizada exitosamente";
+      } else {
+        await propiedadService.crear(dataToSend);
+        message = "Propiedad agregada exitosamente";
+      }
+      
+      setShowModal(false);
+      alert(message);
+      fetchPropiedades(); 
+      
+    } catch (err: any) {
+      let errorMessage = err.message || 'Error desconocido al guardar la propiedad.';
+      alert(`Error al guardar la propiedad: ${errorMessage}`);
+      console.error("Error al guardar:", err);
+    }
+  };
+  
+  const handleImagenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPropiedadActual(prev => ({
+          ...prev,
+          imagen: reader.result as string
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Precio Mensual (CLP) *</label>
-                    <input
-                      type="number"
-                      className="form-control"
-                      value={propiedadActual.precio}
-                      onChange={(e) => setPropiedadActual({
-                        ...propiedadActual,
-                        precio: Number(e.target.value)
-                      })}
-                      min="0"
-                      required
-                    />
-                  </div>
 
-                  <div className="mb-3">
-                    <label className="form-label fw-bold">Imagen Principal</label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      accept="image/*"
-                      onChange={handleImagenChange}
-                    />
-                    {propiedadActual.imagen && (
-                      <img 
-                        src={propiedadActual.imagen} 
-                        alt="Preview" 
-                        className="mt-2"
-                        style={{ width: "100%", maxHeight: "200px", objectFit: "cover" }}
-                      />
-                    )}
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary"
-                    onClick={() => setShowModal(false)}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-success">
-                    {modoEdicion ? "Guardar Cambios" : "Agregar Propiedad"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  // ----------------------------------------------------------------------
+  // RENDERIZADO
+  // ----------------------------------------------------------------------
+
+  return (
+    <div className="container my-5">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="fw-bold">
+          {userRole === ROLES.ADMIN ? "Gestión de Propiedades (Administrador)" : "Mis Propiedades"}
+        </h1>
+        {userRole === ROLES.PROPIETARIO && (
+          <button className="btn btn-success" onClick={handleAgregarPropiedad}>
+            Agregar Propiedad
+          </button>
+        )}
+      </div>
+
+      {userRole === ROLES.ADMIN && (
+        <div className="alert alert-info">
+          <strong>Modo Administrador:</strong> Puedes ver y gestionar todas las propiedades del sistema.
+        </div>
+      )}
+      
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      {/* Pantalla de carga */}
+      {isLoading ? (
+        <div className="text-center my-5">
+            <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Cargando...</span>
+            </div>
+            <p className="mt-2">Cargando propiedades...</p>
+        </div>
+      ) : (
+        // Contenido cargado
+        propiedades.length === 0 ? (
+          <div className="alert alert-warning text-center">
+            {userRole === ROLES.ADMIN 
+              ? "No hay propiedades en el sistema." 
+              : "No tienes propiedades publicadas. ¡Agrega tu primera propiedad!"}
+          </div>
+        ) : (
+          <div className="row g-4">
+            {propiedades.map((propiedad) => (
+              <div className="col-md-6 col-lg-4" key={propiedad.id}>
+                <div className="card shadow-sm h-100">
+                    <img 
+                      src={propiedad.imagen} 
+                      className="card-img-top" 
+                      alt={propiedad.titulo}
+                      style={{ height: "200px", objectFit: "cover" }}
+                    />
+                    <div className="card-body d-flex flex-column">
+                      <h5 className="card-title">{propiedad.titulo}</h5>
+                      <p className="card-text text-muted small">{propiedad.descripcion}</p>
+                      <p className="fw-bold text-success">
+                        ${propiedad.precioMensual.toLocaleString('es-CL')} {propiedad.divisa}
+                      </p>
+                      <p className="text-muted small">{propiedad.direccion}</p>
+                      
+                      {userRole === ROLES.ADMIN && (
+                        <p className="text-muted small">
+                          <strong>Propietario:</strong> {propiedad.propietarioEmail}
+                        </p>
+                      )}
+
+                      <div className="mt-auto d-flex gap-2">
+                        {(userRole === ROLES.ADMIN || (userRole === ROLES.PROPIETARIO && propiedad.propietarioEmail === userEmail)) && (
+                            <>
+                                <button 
+                                  className="btn btn-primary btn-sm flex-fill"
+                                  onClick={() => handleEditarPropiedad(propiedad)}
+                                >
+                                  Editar
+                                </button>
+                                <button 
+                                  className="btn btn-danger btn-sm flex-fill"
+                                  onClick={() => handleEliminarPropiedad(propiedad.id)}
+                                >
+                                  Eliminar
+                                </button>
+                            </>
+                        )}
+                      </div>
+                    </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+      
+      {/* --- MODAL DE AGREGAR/EDITAR (ACTUALIZADO CON SELECTS) --- */}
+      {showModal && (
+        <div
+          className="modal d-block"
+          tabIndex={-1}
+          style={{ backgroundColor: "rgba(0,0,0,0.6)", position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', zIndex: 1050 }}
+        >
+          <div className="modal-dialog modal-dialog-centered modal-md">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  {modoEdicion ? "Editar Propiedad" : "Agregar Nueva Propiedad"}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModal(false)}
+                ></button>
+              </div>
+              <form onSubmit={handleGuardarPropiedad}>
+                <div className="modal-body">
+                  
+                  {/* TÍTULO/NOMBRE */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Título/Nombre de la Propiedad *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={propiedadActual.titulo}
+                      onChange={(e) => setPropiedadActual({ ...propiedadActual, titulo: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  {/* DESCRIPCIÓN */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Descripción</label>
+                    <textarea
+                      className="form-control"
+                      rows={3}
+                      value={propiedadActual.descripcion}
+                      onChange={(e) => setPropiedadActual({ ...propiedadActual, descripcion: e.target.value })}
+                    />
+                  </div>
+
+                  {/* DIRECCIÓN */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Dirección *</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={propiedadActual.direccion}
+                      onChange={(e) => setPropiedadActual({ ...propiedadActual, direccion: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  {/* PRECIO MENSUAL (Mapeado a precioMensual) */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Precio Mensual (CLP) *</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={propiedadActual.precioMensual}
+                      onChange={(e) => setPropiedadActual({ ...propiedadActual, precioMensual: Number(e.target.value) })}
+                      min="0"
+                      required
+                    />
+                  </div>
+                  
+                  {/* 🚨 Fila de SELECTS: TIPO DE PROPIEDAD y COMUNA 🚨 */}
+                  <div className="row mb-3">
+                    <div className="col-md-6">
+                      <label className="form-label fw-bold">Tipo de Propiedad *</label>
+                      <select 
+                        className="form-select"
+                        value={propiedadActual.tipoId}
+                        onChange={(e) => setPropiedadActual({ ...propiedadActual, tipoId: Number(e.target.value) })}
+                        required
+                      >
+                        <option value={0} disabled>Seleccione un tipo</option>
+                        {tipos.map((tipo) => (
+                          <option key={tipo.id} value={tipo.id}>
+                            {tipo.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      {tipos.length === 0 && <small className="text-danger">Cargando tipos...</small>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label fw-bold">Comuna *</label>
+                      <select 
+                        className="form-select"
+                        value={propiedadActual.comunaId}
+                        onChange={(e) => setPropiedadActual({ ...propiedadActual, comunaId: Number(e.target.value) })}
+                        required
+                      >
+                        <option value={0} disabled>Seleccione una comuna</option>
+                        {comunas.map((comuna) => (
+                          <option key={comuna.id} value={comuna.id}>
+                            {comuna.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      {comunas.length === 0 && <small className="text-danger">Cargando comunas...</small>}
+                    </div>
+                  </div>
+                  
+                  <div className="row mb-3">
+                    <div className="col-md-4">
+                      <label className="form-label fw-bold">Metros Cuadrados (m2) *</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={propiedadActual.m2}
+                        onChange={(e) => setPropiedadActual({ ...propiedadActual, m2: Number(e.target.value) })}
+                        min="1"
+                        required
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-bold">Habitaciones</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={propiedadActual.nHabit}
+                        onChange={(e) => setPropiedadActual({ ...propiedadActual, nHabit: Number(e.target.value) })}
+                        min="0"
+                        required
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <label className="form-label fw-bold">Baños</label>
+                      <input
+                        type="number"
+                        className="form-control"
+                        value={propiedadActual.nBanos}
+                        onChange={(e) => setPropiedadActual({ ...propiedadActual, nBanos: Number(e.target.value) })}
+                        min="0"
+                        required
+                      />
+                    </div>
+                  </div>
+
+
+                  <div className="mb-3 form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="petFriendlyCheck"
+                      checked={propiedadActual.petFriendly}
+                      onChange={(e) => setPropiedadActual({ ...propiedadActual, petFriendly: e.target.checked })}
+                    />
+                    <label className="form-check-label fw-bold" htmlFor="petFriendlyCheck">Permite Mascotas (Pet Friendly)</label>
+                  </div>
+                  
+                  {/* IMAGEN */}
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">Imagen Principal (URL o Subida)</label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept="image/*"
+                      onChange={handleImagenChange}
+                    />
+                    {propiedadActual.imagen && (
+                      <img 
+                        src={propiedadActual.imagen} 
+                        alt="Preview" 
+                        className="mt-2"
+                        style={{ width: "100%", maxHeight: "200px", objectFit: "cover" }}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary"
+                    onClick={() => setShowModal(false)}
+                  >
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn btn-success">
+                    {modoEdicion ? "Guardar Cambios" : "Agregar Propiedad"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
 };
 
 export default GestionPropiedades;

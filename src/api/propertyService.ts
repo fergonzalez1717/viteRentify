@@ -84,6 +84,32 @@ export const propiedadService = {
   },
 
   /**
+   * Listar propiedades por ID de propietario (NUEVA FUNCIÓN)
+   */
+  async listarPorPropietario(propietarioId: number, includeDetails: boolean = true): Promise<PropiedadDTO[]> {
+    try {
+        // Asumiendo que el endpoint de tu backend es: /propiedades/usuario/{id}
+        const url = `${BASE_URL}/propiedades/usuario/${propietarioId}?includeDetails=${includeDetails}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: API_CONFIG.HEADERS,
+        });
+
+        if (!response.ok) {
+          await handleError(response);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error(`Error al listar propiedades del propietario ${propietarioId}:`, error);
+        throw error;
+    }
+  },
+
+
+  
+
+  /**
    * Obtener propiedad por ID
    */
   async obtenerPorId(id: number, includeDetails: boolean = true): Promise<PropiedadDTO> {
